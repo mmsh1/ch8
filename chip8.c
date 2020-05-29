@@ -7,19 +7,9 @@
 void
 chip8_init(chip8_t *c8)
 {
+    memset(c8, 0, sizeof(*c8));
     c8->interpreter.PC = 0x200;
-    c8->interpreter.opcode = 0;
-    c8->interpreter.I = 0;
-    c8->interpreter.SP = 0;
-
-    /* clear display */
-    /* clear stack */
-    /* clear registers */
-    /* clear memory */
-
-    (void)memcpy(c8->RAM, &sprites, 80);
-
-    /* Reset timers */
+    memcpy(c8->RAM, &sprites, 80);
 }
 
 void
@@ -30,6 +20,10 @@ chip8_emulatecycle(chip8_t *c8)
     /* fetch opcode */
     c8_in->opcode =
         c8->RAM[c8_in->PC] << 8 | c8->RAM[(c8_in->PC) + 1];
+
+    /* increment program counter */
+    c8_in->PC += 2;
+
     /* decode opcode */
     /* HUGE switch MUST be moved to separate function */
     /* check leftmost 4 bits */
@@ -179,10 +173,10 @@ chip8_emulatecycle(chip8_t *c8)
             c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
             break;
         }
-        /* case 0xD000: {
+        case 0xD000: {
             uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
             uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-            uint8_t height = (c8_in->opcode & 0x000F); n from opcode
+            uint8_t height = (c8_in->opcode & 0x000F);
 
             uint8_t xpos = c8_in->V[x] % DISP_WIDTH;
             uint8_t ypos = c8_in->V[y] % DISP_HEIGHT;
@@ -191,11 +185,22 @@ chip8_emulatecycle(chip8_t *c8)
             for (uint32_t row = 0; row < height; row++) {
                 uint8_t sprite_b = c8->RAM[c8_in->I + row];
 
-                for (uint32_t col = 0; col < 8; col++);
+                for (uint32_t col = 0; col < 8; col++) {
+                    uint8_t sprite_pixel = sprite_b & (0x80u >> col);
+                    uint8_t *screen_pixel =
+                        &(c8_in->disp_mem[(ypos + row) * DISP_WIDTH + (xpos + col)]);
+
+                    if (sprite_pixel) {
+                        if (0xFF == *screen_pixel) {
+                            c8_in->V[0xF] = 1;
+                        }
+                        *screen_pixel ^= 0xFF;
+                    }
+                }
 
             }
             break;
-        } */
+        }
         case 0xE000:
             switch (c8_in->opcode & 0x00FF) {
                 case 0x009E:
@@ -205,12 +210,38 @@ chip8_emulatecycle(chip8_t *c8)
             }
             break;
         case 0xF000:
+            switch (c8_in->opcode & 0x00FF) {
+                case 0x0007:
+                    break;
+                case 0x000A:
+                    break;
+                case 0x0015:
+                    break;
+                case 0x0018:
+                    break;
+                case 0x001E:
+                    break;
+                case 0x0029:
+                    break;
+                case 0x0033:
+                    break;
+                case 0x0055:
+                    break;
+                case 0x0065:
+                    break;
+            }
             break;
         default:
             fprintf(stderr, "Error: invalid opcode: 0x%X\n", c8_in->opcode);
             break;
     }
     /* update timers */
+    if (c8_in->delay_timer > 0) {
+        c8_in->delay_timer -= 1;
+    }
+    if (c8_in->sound_timer > 0) {
+        c8_in->sound_timer -= 1;
+    }
 }
 
 void
@@ -229,8 +260,8 @@ chip8_loadgame(chip8_t *c8, char *game_name)
 int
 main(void)
 {
-    chip8_t *ch8 = calloc(1, sizeof(chip8_t));
-    chip8_init(ch8);
-    free(ch8);
+    chip8_t *c8 = malloc(sizeof(*c8));
+    chip8_init(c8);
+    free(c8);
     return 0;
 }
