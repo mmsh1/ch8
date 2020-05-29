@@ -203,10 +203,22 @@ chip8_emulatecycle(chip8_t *c8)
         }
         case 0xE000:
             switch (c8_in->opcode & 0x00FF) {
-                case 0x009E:
+                case 0x009E: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    uint8_t keynum = c8_in->V[x];
+                    if (c8_in->keys[keynum]) {
+                        c8_in->PC += 2;
+                    }
                     break;
-                case 0x00A1:
+                }
+                case 0x00A1: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    uint8_t keynum = c8_in->V[x];
+                    if (!c8_in->keys[keynum]) {
+                        c8_in->PC += 2;
+                    }
                     break;
+                    }
             }
             break;
         case 0xF000:
