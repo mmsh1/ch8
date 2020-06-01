@@ -218,29 +218,86 @@ chip8_emulatecycle(chip8_t *c8)
                         c8_in->PC += 2;
                     }
                     break;
-                    }
+                }
             }
             break;
         case 0xF000:
             switch (c8_in->opcode & 0x00FF) {
-                case 0x0007:
+                case 0x0007: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    c8_in->V[x] = c8_in->delay_timer;
                     break;
-                case 0x000A:
+                }
+                case 0x000A: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    if (c8_in->keys[0]) {
+                        c8_in->V[x] = 0;
+                    } else if (c8_in->keys[1]) {
+                        c8_in->V[x] = 1;
+                    } else if (c8_in->keys[2]) {
+                        c8_in->V[x] = 2;
+                    } else if (c8_in->keys[3]) {
+                        c8_in->V[x] = 3;
+                    } else if (c8_in->keys[4]) {
+                        c8_in->V[x] = 4;
+                    } else if (c8_in->keys[5]) {
+                        c8_in->V[x] = 5;
+                    } else if (c8_in->keys[6]) {
+                        c8_in->V[x] = 6;
+                    } else if (c8_in->keys[7]) {
+                        c8_in->V[x] = 7;
+                    } else if (c8_in->keys[8]) {
+                        c8_in->V[x] = 8;
+                    } else if (c8_in->keys[9]) {
+                        c8_in->V[x] = 9;
+                    } else if (c8_in->keys[10]) {
+                        c8_in->V[x] = 10;
+                    } else if (c8_in->keys[11]) {
+                        c8_in->V[x] = 11;
+                    } else if (c8_in->keys[12]) {
+                        c8_in->V[x] = 12;
+                    } else if (c8_in->keys[13]) {
+                        c8_in->V[x] = 13;
+                    } else if (c8_in->keys[14]) {
+                        c8_in->V[x] = 14;
+                    } else if (c8_in->keys[15]) {
+                        c8_in->V[x] = 15;
+                    }
                     break;
-                case 0x0015:
+                }
+                case 0x0015: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    c8_in->delay_timer = c8_in->V[x];
                     break;
-                case 0x0018:
+                }
+                case 0x0018: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    c8_in->sound_timer = c8_in->V[x];
                     break;
-                case 0x001E:
+                }
+                case 0x001E: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    c8_in->I += c8_in->V[x];
                     break;
-                case 0x0029:
+                }
+                case 0x0029: {
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    uint8_t digit = c8_in->V[x];
+                    c8_in->I = (5 * digit); /* fonts starting address is RAM[0] */
                     break;
-                case 0x0033:
+                }
+                case 0x0033: {
+
                     break;
-                case 0x0055:
+                }
+                case 0x0055: {
+
                     break;
-                case 0x0065:
+                }
+                case 0x0065: {
+
                     break;
+                }
             }
             break;
         default:
