@@ -9,7 +9,7 @@ chip8_init(chip8_t *c8)
 {
     memset(c8, 0, sizeof(*c8));
     c8->interpreter.PC = 0x200;
-    memcpy(c8->RAM, &sprites, 80);
+    memcpy(c8->interpreter.font, &sprites, 80);
 }
 
 void
@@ -287,15 +287,25 @@ chip8_emulatecycle(chip8_t *c8)
                     break;
                 }
                 case 0x0033: {
-
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    uint8_t value = c8_in->V[x];
+                    c8->RAM[c8_in->I] = value / 100;
+                    c8->RAM[(c8_in->I) + 1] = value % 100 / 10;
+                    c8->RAM[(c8_in->I) + 2] = value % 10;
                     break;
                 }
                 case 0x0055: {
-
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    for(uint8_t i = 0; i <= x; i++) {
+                        c8->RAM[(c8_in->I) + i] = c8_in->V[i];
+                    }
                     break;
                 }
                 case 0x0065: {
-
+                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    for (uint8_t i = 0; i <= x; i++) {
+                        c8_in->V[i] = c8->RAM[(c8_in->I) + i];
+                    }
                     break;
                 }
             }
