@@ -341,9 +341,6 @@ main(void)
 {
     chip8_t *c8 = malloc(sizeof(*c8));
     chip8_init(c8);
-    for (int i = 0; i < 80; i++) {
-        fprintf(stdout, "0x%X\n", c8->interpreter.font[i]);
-    }
     free(c8);
     return 0;
 }
