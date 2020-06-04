@@ -1,8 +1,9 @@
 #include <stdlib.h>
-#include <stdio.h>
+
 #include <string.h>
 
 #include "chip8.h"
+#include "sdl_layer.h"
 
 void
 chip8_init(chip8_t *c8)
@@ -31,7 +32,8 @@ chip8_emulatecycle(chip8_t *c8)
         case 0x0000:
             switch (c8_in->opcode & 0x000F) {
                 case 0x00E0:
-                    memset(c8_in->disp_mem, 0, DISP_WIDTH * DISP_HEIGHT / 8);
+                    memset(c8_in->disp_mem, 0, sizeof(c8_in->disp_mem));
+                    c8_in->draw_flag = 1;
                     break;
                 case 0x00EE:
                     c8_in->PC = c8_in->stack[c8_in->SP];
@@ -178,27 +180,26 @@ chip8_emulatecycle(chip8_t *c8)
             uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
             uint8_t height = (c8_in->opcode & 0x000F);
 
-            uint8_t xpos = c8_in->V[x] % DISP_WIDTH;
-            uint8_t ypos = c8_in->V[y] % DISP_HEIGHT;
+            uint8_t xpos; /*= c8_in->V[x] % DISP_WIDTH;*/
+            uint8_t ypos; /*= c8_in->V[y] % DISP_HEIGHT;*/
             c8_in->V[0xF] = 0;
 
-            for (uint32_t row = 0; row < height; row++) {
-                uint8_t sprite_b = c8->RAM[c8_in->I + row];
+            for (uint32_t scan = 0; scan < height; scan++) {
 
-                for (uint32_t col = 0; col < 8; col++) {
-                    uint8_t sprite_pixel = sprite_b & (0x80u >> col);
-                    uint8_t *screen_pixel =
-                        &(c8_in->disp_mem[(ypos + row) * DISP_WIDTH + (xpos + col)]);
+                xpos = c8_in->V[x] % 64;
+                ypos = (c8_in->V[y] + scan) % 32;
 
-                    if (sprite_pixel) {
-                        if (0xFF == *screen_pixel) {
-                            c8_in->V[0xF] = 1;
-                        }
-                        *screen_pixel ^= 0xFF;
-                    }
-                }
+                uint8_t sprite_line = c8->RAM[c8_in->I + xpos];
+                uint16_t buffer = (c8_in->disp_mem[ypos * 8 + xpos] << 8)
+                    + c8_in->disp_mem[ypos * 8 + xpos + 1];
+
+                buffer ^= sprite_line >> (xpos % 8);
+
+                c8_in->disp_mem[ypos * 8 + xpos] = (buffer & 0xFF00) >> 8;
+                c8_in->disp_mem[ypos * 8 + xpos + 1] = buffer & 0x00FF;
 
             }
+            c8_in->draw_flag = 1;
             break;
         }
         case 0xE000:
@@ -337,10 +338,30 @@ chip8_loadgame(chip8_t *c8, char *game_name)
 }
 
 int
-main(void)
+main(int argc, char **argv)
 {
+    if (argc < 2) {
+        fprintf(stderr, "Error: No ROM selected!\n");
+    }
     chip8_t *c8 = malloc(sizeof(*c8));
     chip8_init(c8);
+    chip8_loadgame(c8, argv[1]);
+    sdl_layer_init(argv[1], DISP_WIDTH, DISP_HEIGHT, 10);
+
+    int close_requested = 0;
+    while (!close_requested) {
+        chip8_emulatecycle(c8);
+        if (c8->interpreter.draw_flag) {
+            sdl_layer_draw(c8->interpreter.disp_mem, 256, 4 * DISP_WIDTH);
+        }
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                close_requested = 1;
+            }
+        }
+    }
+    sdl_layer_destroy();
     free(c8);
     return 0;
 }
