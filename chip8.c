@@ -1,9 +1,43 @@
 #include <stdlib.h>
-
 #include <string.h>
 
 #include "chip8.h"
 #include "sdl_layer.h"
+
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+(byte & 0x80 ? '1' : '0'), \
+(byte & 0x40 ? '1' : '0'), \
+(byte & 0x20 ? '1' : '0'), \
+(byte & 0x10 ? '1' : '0'), \
+(byte & 0x08 ? '1' : '0'), \
+(byte & 0x04 ? '1' : '0'), \
+(byte & 0x02 ? '1' : '0'), \
+(byte & 0x01 ? '1' : '0')
+
+#define PRINTF_BINARY_PATTERN_INT8 "%c%c%c%c%c%c%c%c"
+#define PRINTF_BYTE_TO_BINARY_INT8(i)    \
+(((i) & 0x80ll) ? '1' : '0'), \
+(((i) & 0x40ll) ? '1' : '0'), \
+(((i) & 0x20ll) ? '1' : '0'), \
+(((i) & 0x10ll) ? '1' : '0'), \
+(((i) & 0x08ll) ? '1' : '0'), \
+(((i) & 0x04ll) ? '1' : '0'), \
+(((i) & 0x02ll) ? '1' : '0'), \
+(((i) & 0x01ll) ? '1' : '0')
+
+#define PRINTF_BINARY_PATTERN_INT16 \
+PRINTF_BINARY_PATTERN_INT8              PRINTF_BINARY_PATTERN_INT8
+#define PRINTF_BYTE_TO_BINARY_INT16(i) \
+PRINTF_BYTE_TO_BINARY_INT8((i) >> 8),   PRINTF_BYTE_TO_BINARY_INT8(i)
+#define PRINTF_BINARY_PATTERN_INT32 \
+PRINTF_BINARY_PATTERN_INT16             PRINTF_BINARY_PATTERN_INT16
+#define PRINTF_BYTE_TO_BINARY_INT32(i) \
+PRINTF_BYTE_TO_BINARY_INT16((i) >> 16), PRINTF_BYTE_TO_BINARY_INT16(i)
+#define PRINTF_BINARY_PATTERN_INT64    \
+PRINTF_BINARY_PATTERN_INT32             PRINTF_BINARY_PATTERN_INT32
+#define PRINTF_BYTE_TO_BINARY_INT64(i) \
+PRINTF_BYTE_TO_BINARY_INT32((i) >> 32), PRINTF_BYTE_TO_BINARY_INT32(i)
 
 void
 chip8_init(chip8_t *c8)
@@ -180,28 +214,32 @@ chip8_emulatecycle(chip8_t *c8)
             uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
             uint8_t height = (c8_in->opcode & 0x000F);
 
-            uint8_t xpos; /*= c8_in->V[x] % DISP_WIDTH;*/
-            uint8_t ypos; /*= c8_in->V[y] % DISP_HEIGHT;*/
+            uint8_t top = c8_in->V[y];
+            uint8_t left = c8_in->V[x] + 7;
+            uint64_t flag = 0;
+
             c8_in->V[0xF] = 0;
 
-            for (uint32_t scan = 0; scan < height; scan++) {
+            for (int row = 0; row < height; row++) {
+                uint64_t *disp_row = &(c8_in->disp_mem[(top + row) % 32]);
+                uint64_t sprite_row = __builtin_rotateright64(c8->RAM[c8_in->I + row], left);
+                flag |= *disp_row & sprite_row;
+                *disp_row ^= sprite_row;
+                fprintf(stdout, "disp_row "
+                        PRINTF_BINARY_PATTERN_INT64 "\n",
+                        PRINTF_BYTE_TO_BINARY_INT64(*disp_row));
 
-                xpos = c8_in->V[x] % 64;
-                ypos = (c8_in->V[y] + scan) % 32;
-
-                uint8_t sprite_line = c8->RAM[c8_in->I + xpos];
-                uint16_t buffer = (c8_in->disp_mem[ypos * 8 + xpos] << 8)
-                    + c8_in->disp_mem[ypos * 8 + xpos + 1];
-
-                buffer ^= sprite_line >> (xpos % 8);
-
-                c8_in->disp_mem[ypos * 8 + xpos] = (buffer & 0xFF00) >> 8;
-                c8_in->disp_mem[ypos * 8 + xpos + 1] = buffer & 0x00FF;
+                if (!flag)
+                    c8_in->V[0xF] = 1;
+                /*fprintf(stdout, "sprite_row"
+                PRINTF_BINARY_PATTERN_INT64 "\n",
+                PRINTF_BYTE_TO_BINARY_INT64(sprite_row));*/
 
             }
             c8_in->draw_flag = 1;
             break;
         }
+
         case 0xE000:
             switch (c8_in->opcode & 0x00FF) {
                 case 0x009E: {
@@ -350,15 +388,15 @@ main(int argc, char **argv)
 
     int close_requested = 0;
     while (!close_requested) {
+        SDL_Event event;
+        SDL_PollEvent(&event);
+        if (event.type == SDL_QUIT) {
+            close_requested = 1;
+        }
         chip8_emulatecycle(c8);
         if (c8->interpreter.draw_flag) {
-            sdl_layer_draw(c8->interpreter.disp_mem, 256, 4 * DISP_WIDTH);
-        }
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                close_requested = 1;
-            }
+            sdl_layer_draw(c8->interpreter.disp_mem, 2056);
+            c8->interpreter.draw_flag = 0;
         }
     }
     sdl_layer_destroy();
