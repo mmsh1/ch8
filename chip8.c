@@ -199,7 +199,6 @@ chip8_emulatecycle(chip8_t *c8)
         }
         case 0xA000:
             c8_in->I = c8_in->opcode & 0x0FFF;
-            c8_in->PC += 2;
             break;
         case 0xB000:
             c8_in->PC = (c8_in->opcode & 0x0FFF) + c8_in->V[0];
@@ -376,6 +375,9 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
         exit(-1); /* TODO add proper exit code */
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
+    for (int i = 0x200; i < 0x1000 - 1; i += 2) {
+        fprintf(stdout, "0x %x%x\n", c8->RAM[i], c8->RAM[i + 1]);
+    }
     fclose(game);
 }
 
