@@ -18,7 +18,7 @@ typedef union {
         uint8_t sound_timer;
         uint8_t SP;             /* stack pointer */
         uint8_t keys[16];
-        uint8_t disp_mem[DISP_WIDTH * DISP_HEIGHT / 8];
+        uint64_t disp_mem[32];
         uint8_t font[16 * 5];   /* 16 sprites, 5 bytes per sprite */
         uint8_t draw_flag;      /* to avoid redundant drawing */
 
@@ -54,6 +54,6 @@ void chip8_init(chip8_t *c8);
 
 void chip8_emulatecycle(chip8_t *c8);
 
-void chip8_loadgame(chip8_t *c8, char *game);
+void chip8_loadgame(chip8_t *c8, const char *game_name);
 
 #endif /* CHIP_8 */

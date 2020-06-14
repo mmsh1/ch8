@@ -4,7 +4,7 @@
 #include "chip8.h"
 #include "sdl_layer.h"
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c\n"
 #define BYTE_TO_BINARY(byte)  \
 (byte & 0x80 ? '1' : '0'), \
 (byte & 0x40 ? '1' : '0'), \
@@ -210,26 +210,30 @@ chip8_emulatecycle(chip8_t *c8)
             break;
         }
         case 0xD000: {
+            //fprintf(stdout, "\nDRAWING CASE\n");
             uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
             uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
             uint8_t height = (c8_in->opcode & 0x000F);
 
             uint8_t top = c8_in->V[y];
-            uint8_t left = c8_in->V[x] + 7;
+            uint8_t left = c8_in->V[x] + 8;
             uint64_t flag = 0;
 
             c8_in->V[0xF] = 0;
 
             for (int row = 0; row < height; row++) {
                 uint64_t *disp_row = &(c8_in->disp_mem[(top + row) % 32]);
-                uint64_t sprite_row = __builtin_rotateright64(c8->RAM[c8_in->I + row], left);
+                /*fprintf(stdout, "raw_sprite_row"
+                        BYTE_TO_BINARY_PATTERN,
+                        BYTE_TO_BINARY(c8->RAM[c8_in->I + row]));*/
+                uint64_t sprite_row = __builtin_rotateright64((uint64_t)c8->RAM[c8_in->I + row], left);
                 flag |= *disp_row & sprite_row;
                 *disp_row ^= sprite_row;
-                fprintf(stdout, "disp_row "
+                /*fprintf(stdout, "disp_row "
                         PRINTF_BINARY_PATTERN_INT64 "\n",
-                        PRINTF_BYTE_TO_BINARY_INT64(*disp_row));
+                        PRINTF_BYTE_TO_BINARY_INT64(*disp_row));*/
 
-                if (!flag)
+                if (flag)
                     c8_in->V[0xF] = 1;
                 /*fprintf(stdout, "sprite_row"
                 PRINTF_BINARY_PATTERN_INT64 "\n",
@@ -363,7 +367,7 @@ chip8_emulatecycle(chip8_t *c8)
 }
 
 void
-chip8_loadgame(chip8_t *c8, char *game_name)
+chip8_loadgame(chip8_t *c8, const char *game_name)
 {
     FILE *game;
     game = fopen(game_name, "rb");
@@ -382,6 +386,10 @@ main(int argc, char **argv)
         fprintf(stderr, "Error: No ROM selected!\n");
     }
     chip8_t *c8 = malloc(sizeof(*c8));
+    if (NULL == c8) {
+        fprintf(stderr, "Error: memory allocation failed!\n");
+        exit(-1); /* TODO add proper exit code */
+    }
     chip8_init(c8);
     chip8_loadgame(c8, argv[1]);
     sdl_layer_init(argv[1], DISP_WIDTH, DISP_HEIGHT, 10);
