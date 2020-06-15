@@ -3,7 +3,6 @@
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
-//SDL_Rect pixel;
 
 int
 sdl_layer_init(const char *wname, int width, int height, int scale)

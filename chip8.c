@@ -375,9 +375,6 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
         exit(-1); /* TODO add proper exit code */
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
-    for (int i = 0x200; i < 0x1000 - 1; i += 2) {
-        fprintf(stdout, "0x %x%x\n", c8->RAM[i], c8->RAM[i + 1]);
-    }
     fclose(game);
 }
 
@@ -405,7 +402,7 @@ main(int argc, char **argv)
         }
         chip8_emulatecycle(c8);
         if (c8->interpreter.draw_flag) {
-            sdl_layer_draw(c8->interpreter.disp_mem, 2056);
+            sdl_layer_draw(c8->interpreter.disp_mem, 2048);
             c8->interpreter.draw_flag = 0;
         }
     }
