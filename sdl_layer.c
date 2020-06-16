@@ -48,7 +48,9 @@ sdl_layer_draw(uint64_t *buffer, uint16_t size)
     for(int i = 0; i < size; i++) {
         pix[i] = 0xFFFFFFFF * ((buffer[i / 64] >> (63 - i % 64)) & 1);
     }
-    SDL_UpdateTexture(texture, NULL, pix, 256); SDL_RenderClear(renderer); SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_UpdateTexture(texture, NULL, pix, 256);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }
 
