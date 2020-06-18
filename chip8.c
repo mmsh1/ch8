@@ -65,11 +65,12 @@ chip8_emulatecycle(chip8_t *c8)
     switch(c8_in->opcode & 0xF000) {
         case 0x0000:
             switch (c8_in->opcode & 0x000F) {
-                case 0x00E0:
-                    memset(c8_in->disp_mem, 0, sizeof(c8_in->disp_mem));
+                case 0x0000:
+                    fprintf(stdout, "SIZEOF DISPMEM %lu\n", sizeof(c8_in->disp_mem));
+                    memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
                     c8_in->draw_flag = 1;
                     break;
-                case 0x00EE:
+                case 0x000E:
                     c8_in->PC = c8_in->stack[c8_in->SP];
                     c8_in->SP -= 1;
                     break;
@@ -375,6 +376,11 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
         exit(-1); /* TODO add proper exit code */
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
+    /* for debugging purposes */
+    for (unsigned i = 0x200; i < MAX_GAME_SIZE - 1; i += 2) {
+        uint16_t opcode = c8->RAM[i] << 8 | c8->RAM[(i) + 1];
+        fprintf(stdout, "0x%X\n", opcode);
+    }
     fclose(game);
 }
 
@@ -391,7 +397,7 @@ main(int argc, char **argv)
     }
     chip8_init(c8);
     chip8_loadgame(c8, argv[1]);
-    sdl_layer_init(argv[1], DISP_WIDTH, DISP_HEIGHT, 10);
+    sdl_layer_init(argv[1], C8_DISP_WIDTH, C8_DISP_HEIGHT, 10);
 
     int close_requested = 0;
     while (!close_requested) {
@@ -402,7 +408,7 @@ main(int argc, char **argv)
         }
         chip8_emulatecycle(c8);
         if (c8->interpreter.draw_flag) {
-            sdl_layer_draw(c8->interpreter.disp_mem, 2048);
+            sdl_layer_draw(c8->interpreter.disp_mem, C8_DISP_WIDTH * C8_DISP_HEIGHT);
             c8->interpreter.draw_flag = 0;
         }
     }

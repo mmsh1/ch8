@@ -6,8 +6,8 @@
 #define RAM_SIZE 0x1000
 #define MAX_GAME_SIZE (0x1000 - 0x200)
 enum {
-    DISP_WIDTH = 64,
-    DISP_HEIGHT = 32
+    C8_DISP_WIDTH = 64,
+    C8_DISP_HEIGHT = 32
 };
 
 typedef union {
@@ -18,7 +18,6 @@ typedef union {
         uint8_t sound_timer;
         uint8_t SP;             /* stack pointer */
         uint8_t keys[16];
-        uint64_t disp_mem[32];
         uint8_t font[16 * 5];   /* 16 sprites, 5 bytes per sprite */
         uint8_t draw_flag;      /* to avoid redundant drawing */
 
@@ -26,6 +25,8 @@ typedef union {
         uint16_t PC;            /* program counter */
         uint16_t stack[16];
         uint16_t I;
+
+        uint64_t disp_mem[C8_DISP_WIDTH];
     } interpreter;
 
 } chip8_t;
