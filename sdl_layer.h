@@ -5,7 +5,7 @@
 
 int sdl_layer_init(const char *wname, int width, int height, int scale);
 
-void sdl_layer_draw(uint64_t *buffer, uint16_t size);
+void sdl_layer_draw(uint64_t *buffer, uint32_t *pix, uint16_t size);
 
 void sdl_layer_destroy();
 

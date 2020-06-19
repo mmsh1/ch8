@@ -4,6 +4,25 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
 
+uint8_t keyboard[16] = {
+    SDLK_1,
+    SDLK_2,
+    SDLK_3,
+    SDLK_4,
+    SDLK_q,
+    SDLK_w,
+    SDLK_e,
+    SDLK_r,
+    SDLK_a,
+    SDLK_s,
+    SDLK_d,
+    SDLK_f,
+    SDLK_z,
+    SDLK_x,
+    SDLK_c,
+    SDLK_v
+};
+
 int
 sdl_layer_init(const char *wname, int width, int height, int scale)
 {
@@ -42,9 +61,8 @@ sdl_layer_init(const char *wname, int width, int height, int scale)
 }
 
 void
-sdl_layer_draw(uint64_t *buffer, uint16_t size)
+sdl_layer_draw(uint64_t *buffer, uint32_t *pix, uint16_t size)
 {
-    uint32_t pix[64 * 32];
     for(int i = 0; i < size; i++) {
         pix[i] = 0xFFFFFFFF * ((buffer[i / 64] >> (63 - i % 64)) & 1);
     }
