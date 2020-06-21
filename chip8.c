@@ -428,8 +428,8 @@ main(int argc, char **argv)
         }
         chip8_emulatecycle(c8);
         if (c8->interpreter.draw_flag) {
-            uint32_t pix[C8_DISP_WIDTH * C8_DISP_HEIGHT];
-            sdl_layer_draw(c8->interpreter.disp_mem, pix, C8_DISP_WIDTH * C8_DISP_HEIGHT);
+            uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];
+            sdl_layer_draw(c8->interpreter.disp_mem, output, C8_DISP_WIDTH * C8_DISP_HEIGHT);
             c8->interpreter.draw_flag = 0;
         }
     }
