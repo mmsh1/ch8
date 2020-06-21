@@ -345,7 +345,8 @@ chip8_emulatecycle(chip8_t *c8)
                 case 0x0029: {
                     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
                     uint8_t digit = c8_in->V[x];
-                    c8_in->I = (5 * digit); /* fonts starting address is RAM[0] */
+                    uint16_t fontset_address = &(c8_in->font[0]) - c8->RAM;
+                    c8_in->I = fontset_address + digit * 5;
                     break;
                 }
                 case 0x0033: {
