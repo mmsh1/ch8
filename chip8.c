@@ -79,13 +79,15 @@ chip8_emulatecycle(chip8_t *c8)
     c8_in->PC += 2;
 
     /* decode opcode */
-    /* HUGE switch MUST be moved to separate function */
+    /* (OBSOLETE) HUGE switch MUST be moved to separate function */
+    /* TODO replace with function pointer table */
+
     /* check leftmost 4 bits */
     switch(c8_in->opcode & 0xF000) {
         case 0x0000:
             switch (c8_in->opcode & 0x000F) {
                 case 0x0000:
-                    fprintf(stdout, "SIZEOF DISPMEM %lu\n", sizeof(c8_in->disp_mem));
+                    /*fprintf(stdout, "SIZEOF DISPMEM %lu\n", sizeof(c8_in->disp_mem));*/
                     memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
                     c8_in->draw_flag = 1;
                     break;
@@ -397,10 +399,10 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
     /* for debugging purposes */
-    for (unsigned i = 0x200; i < MAX_GAME_SIZE - 1; i += 2) {
+    /*for (unsigned i = 0x200; i < MAX_GAME_SIZE - 1; i += 2) {
         uint16_t opcode = c8->RAM[i] << 8 | c8->RAM[(i) + 1];
         fprintf(stdout, "0x%X\n", opcode);
-    }
+    }*/
     fclose(game);
 }
 
@@ -411,6 +413,7 @@ main(int argc, char **argv)
         fprintf(stderr, "Error: No ROM selected!\n");
     }
     chip8_t *c8 = malloc(sizeof(*c8));
+    fprintf(stdout, "main keys pointer %p\n", (void*)c8->interpreter.keys);
     if (NULL == c8) {
         fprintf(stderr, "Error: memory allocation failed!\n");
         exit(-1); /* TODO add proper exit code */
@@ -419,17 +422,20 @@ main(int argc, char **argv)
     chip8_loadgame(c8, argv[1]);
     sdl_layer_init(argv[1], C8_DISP_WIDTH, C8_DISP_HEIGHT, 10);
 
-    int close_requested = 0;
-    while (!close_requested) {
-        SDL_Event event;
-        SDL_PollEvent(&event);
-        if (event.type == SDL_QUIT) {
-            close_requested = 1;
-        }
+    uint8_t quit_flag = 0;
+    while (!quit_flag) {
+
+        sdl_handle_keystroke(c8->interpreter.keys, &quit_flag);
+
         chip8_emulatecycle(c8);
+        /*for (int i = 0; i < 16; i++) {
+            fprintf(stdout, "key %d = %d\n", i, c8->interpreter.keys[i]);
+        }*/
         if (c8->interpreter.draw_flag) {
             uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];
-            sdl_layer_draw(c8->interpreter.disp_mem, output, C8_DISP_WIDTH * C8_DISP_HEIGHT);
+            sdl_layer_draw(c8->interpreter.disp_mem,
+                           output,
+                           C8_DISP_WIDTH * C8_DISP_HEIGHT);
             c8->interpreter.draw_flag = 0;
         }
     }
