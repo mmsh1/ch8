@@ -326,6 +326,8 @@ chip8_emulatecycle(chip8_t *c8)
                         c8_in->V[x] = 14;
                     } else if (c8_in->keys[15]) {
                         c8_in->V[x] = 15;
+                    } else {
+                        c8_in->PC -= 2;
                     }
                     break;
                 }
@@ -413,7 +415,6 @@ main(int argc, char **argv)
         fprintf(stderr, "Error: No ROM selected!\n");
     }
     chip8_t *c8 = malloc(sizeof(*c8));
-    fprintf(stdout, "main keys pointer %p\n", (void*)c8->interpreter.keys);
     if (NULL == c8) {
         fprintf(stderr, "Error: memory allocation failed!\n");
         exit(-1); /* TODO add proper exit code */
@@ -428,9 +429,6 @@ main(int argc, char **argv)
         sdl_handle_keystroke(c8->interpreter.keys, &quit_flag);
 
         chip8_emulatecycle(c8);
-        /*for (int i = 0; i < 16; i++) {
-            fprintf(stdout, "key %d = %d\n", i, c8->interpreter.keys[i]);
-        }*/
         if (c8->interpreter.draw_flag) {
             uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];
             sdl_layer_draw(c8->interpreter.disp_mem,
