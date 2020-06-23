@@ -63,7 +63,6 @@ sdl_layer_init(const char *wname, int width, int height, int scale)
 void
 sdl_handle_keystroke(uint8_t *keys, uint8_t *quit_flag)
 {
-    fprintf(stdout, "keys pointer %p\n", (void*)keys);
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {

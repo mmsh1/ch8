@@ -294,6 +294,18 @@ chip8_emulatecycle(chip8_t *c8)
                 }
                 case 0x000A: {
                     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+                    /* TODO rewrite with cycle */
+                    /* uint8_t any_key_pressed = 1 */
+                    /* for (uint8_t i = 0; i < 16; i++) {
+                     *     if (c8_in->keys[i]) {
+                     *          c8_in->V[x] = i;
+                     *          any_key_pressed = 1;
+                     *          break;
+                     * }
+                     * if (!any_key_pressed) {
+                     *     c8_in->PC -= 2;
+                     * } 
+                     */
                     if (c8_in->keys[0]) {
                         c8_in->V[x] = 0;
                     } else if (c8_in->keys[1]) {
