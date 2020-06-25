@@ -227,6 +227,7 @@ chip8_emulatecycle(chip8_t *c8)
             break;
         case 0xC000: {
             uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+            /* TODO consider using mt19937 for pseudo random numbers */
             c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
             break;
         }
@@ -254,8 +255,9 @@ chip8_emulatecycle(chip8_t *c8)
                         PRINTF_BINARY_PATTERN_INT64 "\n",
                         PRINTF_BYTE_TO_BINARY_INT64(*disp_row));*/
 
-                if (flag)
+                if (flag) {
                     c8_in->V[0xF] = 1;
+                }
                 /*fprintf(stdout, "sprite_row"
                 PRINTF_BINARY_PATTERN_INT64 "\n",
                 PRINTF_BYTE_TO_BINARY_INT64(sprite_row));*/
@@ -294,51 +296,15 @@ chip8_emulatecycle(chip8_t *c8)
                 }
                 case 0x000A: {
                     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    /* TODO rewrite with cycle */
-                    /* uint8_t any_key_pressed = 1 */
-                    /* for (uint8_t i = 0; i < 16; i++) {
-                     *     if (c8_in->keys[i]) {
-                     *          c8_in->V[x] = i;
-                     *          any_key_pressed = 1;
-                     *          break;
-                     * }
-                     * if (!any_key_pressed) {
-                     *     c8_in->PC -= 2;
-                     * } 
-                     */
-                    if (c8_in->keys[0]) {
-                        c8_in->V[x] = 0;
-                    } else if (c8_in->keys[1]) {
-                        c8_in->V[x] = 1;
-                    } else if (c8_in->keys[2]) {
-                        c8_in->V[x] = 2;
-                    } else if (c8_in->keys[3]) {
-                        c8_in->V[x] = 3;
-                    } else if (c8_in->keys[4]) {
-                        c8_in->V[x] = 4;
-                    } else if (c8_in->keys[5]) {
-                        c8_in->V[x] = 5;
-                    } else if (c8_in->keys[6]) {
-                        c8_in->V[x] = 6;
-                    } else if (c8_in->keys[7]) {
-                        c8_in->V[x] = 7;
-                    } else if (c8_in->keys[8]) {
-                        c8_in->V[x] = 8;
-                    } else if (c8_in->keys[9]) {
-                        c8_in->V[x] = 9;
-                    } else if (c8_in->keys[10]) {
-                        c8_in->V[x] = 10;
-                    } else if (c8_in->keys[11]) {
-                        c8_in->V[x] = 11;
-                    } else if (c8_in->keys[12]) {
-                        c8_in->V[x] = 12;
-                    } else if (c8_in->keys[13]) {
-                        c8_in->V[x] = 13;
-                    } else if (c8_in->keys[14]) {
-                        c8_in->V[x] = 14;
-                    } else if (c8_in->keys[15]) {
-                        c8_in->V[x] = 15;
-                    } else {
+                    uint8_t no_key_pressed = 1;
+                    for (uint8_t i = 0; i < 16; i++) {
+                        if (c8_in->keys[i]) {
+                        c8_in->V[x] = i;
+                        no_key_pressed = 0;
+                        break;
+                        }
+                    }
+                    if (no_key_pressed) {
                         c8_in->PC -= 2;
                     }
                     break;
@@ -437,9 +403,7 @@ main(int argc, char **argv)
 
     uint8_t quit_flag = 0;
     while (!quit_flag) {
-
         sdl_handle_keystroke(c8->interpreter.keys, &quit_flag);
-
         chip8_emulatecycle(c8);
         if (c8->interpreter.draw_flag) {
             uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];
