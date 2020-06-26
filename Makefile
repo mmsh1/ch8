@@ -1,6 +1,5 @@
-#CFLAGS = -Wall -Werror -Wextra -std=c99 -pedantic -ggdb -lSDL2 -I/usr/include/
-CFLAGS = -lSDL2 -g3 -O0 -I/usr/include/
-CC = clang
+CFLAGS = -Wall -Werror -Wextra -std=c99 -pedantic -lSDL2 -I/usr/include/
+#TODO rewrite Makefile to compiler independence
 
 all: options chip8
 

@@ -58,6 +58,13 @@ uint8_t sprites[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80    /* F */
 };
 
+static uint64_t
+_rotate_r64(uint64_t sprite_data, uint8_t left)
+{
+    return (sprite_data >> left) | (sprite_data << (64 - left));
+}
+
+
 void
 chip8_init(chip8_t *c8)
 {
@@ -87,7 +94,6 @@ chip8_emulatecycle(chip8_t *c8)
         case 0x0000:
             switch (c8_in->opcode & 0x000F) {
                 case 0x0000:
-                    /*fprintf(stdout, "SIZEOF DISPMEM %lu\n", sizeof(c8_in->disp_mem));*/
                     memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
                     c8_in->draw_flag = 1;
                     break;
@@ -248,7 +254,7 @@ chip8_emulatecycle(chip8_t *c8)
                 /*fprintf(stdout, "raw_sprite_row"
                         BYTE_TO_BINARY_PATTERN,
                         BYTE_TO_BINARY(c8->RAM[c8_in->I + row]));*/
-                uint64_t sprite_row = __builtin_rotateright64((uint64_t)c8->RAM[c8_in->I + row], left);
+                uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8_in->I + row], left);
                 flag |= *disp_row & sprite_row;
                 *disp_row ^= sprite_row;
                 /*fprintf(stdout, "disp_row "
