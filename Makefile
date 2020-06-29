@@ -1,5 +1,6 @@
-CFLAGS = -Wall -Werror -Wextra -std=c99 -pedantic -lSDL2 -I/usr/include/
-#TODO rewrite Makefile to compiler independence
+CFLAGS = -Wall -Werror -Wextra -std=c99 -pedantic
+LIBS = -lSDL2
+#INCLUDE = -I/usr/include/
 
 all: options chip8
 
@@ -9,14 +10,14 @@ options:
 	@echo "CC      = $(CC)"
 
 chip8: chip8.o sdl_layer.o
-	$(CC) $(CFLAGS) -o chip8 chip8.o sdl_layer.o
+	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
 
 sdl_layer.o: sdl_layer.c
-	$(CC) -c $(CFLAGS) -o sdl_layer.o sdl_layer.c
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 chip8.o: chip8.c
-	$(CC) -c $(CFLAGS) -o chip8.o chip8.c
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:
-	rm -rf *.o *.out chip8
-
+	rm -f chip8
+	rm -f *.o
