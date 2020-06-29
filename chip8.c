@@ -24,9 +24,9 @@ uint8_t sprites[80] = {
 };
 
 static uint64_t
-_rotate_r64(uint64_t sprite_data, uint8_t left)
+_rotate_r64(uint64_t bitarr, uint8_t shr)
 {
-    return (sprite_data >> left) | (sprite_data << (64 - left));
+    return (bitarr >> shr) | (bitarr << (64 - shr));
 }
 
 void
@@ -206,15 +206,15 @@ chip8_emulatecycle(chip8_t *c8)
             uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
             uint8_t height = (c8_in->opcode & 0x000F);
 
-            uint8_t top = c8_in->V[y];
-            uint8_t left = c8_in->V[x] + 8;
+            uint8_t ypos = c8_in->V[y];
+            uint8_t xpos = c8_in->V[x] + 8;
             uint64_t flag = 0;
 
             c8_in->V[0xF] = 0;
 
             for (int row = 0; row < height; row++) {
-                uint64_t *disp_row = &(c8_in->disp_mem[(top + row) % 32]);
-                uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8_in->I + row], left);
+                uint64_t *disp_row = &(c8_in->disp_mem[(ypos + row) % 32]);
+                uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8_in->I + row], xpos);
                 flag |= *disp_row & sprite_row;
                 *disp_row ^= sprite_row;
 
