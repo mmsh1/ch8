@@ -35,6 +35,6 @@ void chip8_init(chip8_t *c8);
 
 void chip8_emulatecycle(chip8_t *c8);
 
-void chip8_loadgame(chip8_t *c8, const char *game_name);
+int chip8_loadgame(chip8_t *c8, const char *game_name);
 
 #endif /* CHIP_8 */

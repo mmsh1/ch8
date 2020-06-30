@@ -327,34 +327,50 @@ chip8_emulatecycle(chip8_t *c8)
     }
 }
 
-void
+int
 chip8_loadgame(chip8_t *c8, const char *game_name)
 {
     FILE *game;
     game = fopen(game_name, "rb");
-    if (NULL == game) {
+    if (game == NULL) {
         fprintf(stderr, "Error: failed to open game: %s.\n", game_name);
-        exit(-1); /* TODO add proper exit code */
+        return -1;
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
     fclose(game);
+    return 0;
 }
 
 int
 main(int argc, char **argv)
 {
-    if (argc < 2) {
-        fprintf(stderr, "Error: No ROM selected!\n");
-        exit(-1); /* TODO add proper exit code */
+    if (argc != 3) {
+        fprintf(stderr, "Error: wrong arguments!\n");
+        fprintf(stderr, "Usage: chip8 delay ROM\n");
+        exit(EXIT_FAILURE);
     }
+
+    uint8_t delay = atoi(argv[1]);
+    if (delay > 10)
+        delay = 10;
+    fprintf(stdout, "delay: %d\n", delay);
+
     chip8_t *c8 = malloc(sizeof(*c8));
-    if (NULL == c8) {
+    if (c8 == NULL) {
         fprintf(stderr, "Error: memory allocation failed!\n");
-        exit(-1); /* TODO add proper exit code */
+        exit(EXIT_FAILURE);
     }
+
     chip8_init(c8);
-    chip8_loadgame(c8, argv[1]);
-    sdl_layer_init(argv[1], C8_DISP_WIDTH, C8_DISP_HEIGHT, 10);
+    if (chip8_loadgame(c8, argv[2]) == -1) {
+        fprintf(stderr, "Error: game not loaded!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sdl_layer_init(argv[2], C8_DISP_WIDTH, C8_DISP_HEIGHT, 10) == -1) {
+        fprintf(stderr, "Error: sdl_layer creation failed!\n");
+        exit(EXIT_FAILURE);
+    }
 
     uint8_t quit_flag = 0;
     while (!quit_flag) {
@@ -370,5 +386,5 @@ main(int argc, char **argv)
     }
     sdl_layer_destroy();
     free(c8);
-    return 0;
+    return EXIT_SUCCESS;
 }
