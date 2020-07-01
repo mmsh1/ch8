@@ -346,16 +346,20 @@ main(int argc, char **argv)
 {
     if (argc != 3) {
         fprintf(stderr, "Error: wrong arguments!\n");
-        fprintf(stderr, "Usage: chip8 delay ROM\n");
+        fprintf(stderr, "Usage: %s delay ROM\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    uint8_t delay = atoi(argv[1]);
-    if (delay > 10)
-        delay = 10;
-    fprintf(stdout, "delay: %d\n", delay);
+    chip8_t *c8 = NULL;
+    uint8_t quit_flag = 0;
+    /*uint8_t delay = 0;
 
-    chip8_t *c8 = malloc(sizeof(*c8));
+    delay = (uint8_t)strtoul(argv[1], NULL, 10);
+    if (delay > 5) {
+        delay = 5;
+    }*/
+
+    c8 = malloc(sizeof(*c8));
     if (c8 == NULL) {
         fprintf(stderr, "Error: memory allocation failed!\n");
         exit(EXIT_FAILURE);
@@ -372,7 +376,6 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    uint8_t quit_flag = 0;
     while (!quit_flag) {
         sdl_handle_keystroke(c8->interpreter.keys, &quit_flag);
         chip8_emulatecycle(c8);
