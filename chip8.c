@@ -4,6 +4,19 @@
 #include "chip8.h"
 #include "sdl_layer.h"
 
+typedef void (*c8_opcode_func)(chip8_t *c8, struct internals *c8_in);
+
+/*c8_opcode_func opcodes_main[0xF + 1] = {
+    c8_opcode_NULL, c8_1nnn, c8_2nnn, c8_3xkk, c8_4xkk, c8_5xy0, c8_6xkk,
+    c8_7xkk, c8_opcode_NULL, c8_9xy0, c8_Annn, c8_Bnnn, c8_Cxkk, c8_Dxyn,
+    c8_opcode_NULL, c8_opcode_NULL
+};*/
+
+/*c8_opcode_func opcodes_0[0xE + 1];
+c8_opcode_func opcodes_8[0xE + 1];
+c8_opcode_func opcodes_E[0xA1 + 1];
+c8_opcode_func opcodes_F[0x65 + 1];*/
+
 uint8_t sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
     0x20, 0x60, 0x20, 0x20, 0x70,   /* 1 */
@@ -29,6 +42,334 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
     return (bitarr >> shr) | (bitarr << (64 - shr));
 }
 
+/*static void
+c8_00E0(chip8_t *c8, struct internals *c8_in)
+{
+    memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
+    c8_in->draw_flag = 1;
+}
+
+static void
+c8_00EE(chip8_t *c8, struct internals *c8_in)
+{
+    c8_in->PC = c8_in->stack[c8_in->SP];
+    c8_in->SP -= 1;
+}
+
+static void
+c8_1nnn(chip8_t *c8, struct internals *c8_in)
+{
+    c8_in->PC = c8_in->opcode & 0x0FFF;
+}
+
+static void
+c8_2nnn(chip8_t *c8, struct internals *c8_in)
+{
+    c8_in->SP += 1;
+    c8_in->stack[c8_in->SP] = c8_in->PC;
+    c8_in->PC = c8_in->opcode & 0x0FFF;
+}
+
+static void
+c8_3xkk(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    if (c8_in->V[x] == (c8_in->opcode & 0x00FF)) {
+        c8_in->PC += 2;
+    }
+}
+
+static void
+c8_4xkk(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    if (c8_in->V[x] != (c8_in->opcode & 0x00FF)) {
+        c8_in->PC += 2;
+    }
+}
+
+static void
+c8_5xy0(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    if (c8_in->V[x] == c8_in->V[y]) {
+        c8_in->PC += 2;
+    }
+}
+
+static void
+c8_6xkk(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->V[x] = c8_in->opcode & 0x00FF;
+}
+
+static void
+c8_7xkk(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->V[x] += c8_in->opcode & 0x00FF;
+}
+
+static void
+c8_8xy0(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    c8_in->V[x] = c8_in->V[y];
+}
+
+static void
+c8_8xy1(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    c8_in->V[x] |= c8_in->V[y];
+}
+
+static void
+c8_8xy2(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    c8_in->V[x] &= c8_in->V[y];
+}
+
+static void
+c8_8xy3(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    c8_in->V[x] ^= c8_in->V[y];
+}
+
+static void
+c8_8xy4(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    uint16_t sum = c8_in->V[x] + c8_in->V[y];
+    if (sum > 0xFF) {
+        c8_in->V[0xF] = 1;
+    } else {
+        c8_in->V[0xF] = 0;
+    }
+    c8_in->V[x] = sum & 0x00FF;
+}
+
+static void
+c8_8xy5(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    if (c8_in->V[x] > c8_in->V[y]) {
+        c8_in->V[0xF] = 1;
+    } else {
+        c8_in->V[0xF] = 0;
+    }
+    c8_in->V[x] = c8_in->V[x] - c8_in->V[y];
+}
+
+static void
+c8_8xy6(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->V[0xF] = (c8_in->V[x] & 0x01);
+    c8_in->V[x] >>= 1;
+}
+
+static void
+c8_8xy7(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    if (c8_in->V[y] > c8_in->V[x]) {
+        c8_in->V[0xF] = 1;
+    } else {
+        c8_in->V[0xF] = 0;
+    }
+    c8_in->V[x] = c8_in->V[y] - c8_in->V[x];
+}
+
+static void
+c8_8xyE(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->V[0xF] = (c8_in->V[x] & 0x80) >> 7;
+    c8_in->V[x] <<= 1;
+}
+
+static void
+c8_9xy0(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    if (c8_in->V[x] != c8_in->V[y]) {
+        c8_in->PC += 2;
+    }
+}
+
+static void
+c8_Annn(chip8_t *c8, struct internals *c8_in)
+{
+    c8_in->I = c8_in->opcode & 0x0FFF;
+}
+
+static void
+c8_Bnnn(chip8_t *c8, struct internals *c8_in)
+{
+    c8_in->PC = (c8_in->opcode & 0x0FFF) + c8_in->V[0];
+}
+
+static void
+c8_Cxkk(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    TODO consider using mt19937 for pseudo random numbers
+    c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
+}
+
+static void
+c8_Dxyn(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
+    uint8_t height = (c8_in->opcode & 0x000F);
+
+    uint8_t ypos = c8_in->V[y];
+    uint8_t xpos = c8_in->V[x] + 8;
+    uint64_t flag = 0;
+
+    c8_in->V[0xF] = 0;
+
+    for (int row = 0; row < height; row++) {
+        uint64_t *disp_row = &(c8_in->disp_mem[(ypos + row) % 32]);
+        uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8_in->I + row], xpos);
+        flag |= *disp_row & sprite_row;
+        *disp_row ^= sprite_row;
+
+        if (flag) {
+            c8_in->V[0xF] = 1;
+        }
+    }
+    c8_in->draw_flag = 1;
+}
+
+static void
+c8_Ex9E(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t keynum = c8_in->V[x];
+    if (c8_in->keys[keynum]) {
+        c8_in->PC += 2;
+    }
+}
+
+static void
+c8_ExA1(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t keynum = c8_in->V[x];
+    if (!c8_in->keys[keynum]) {
+        c8_in->PC += 2;
+    }
+}
+
+static void
+c8_Fx07(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->V[x] = c8_in->delay_timer;
+}
+
+static void
+c8_Fx0A(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t no_key_pressed = 1;
+    for (uint8_t i = 0; i < 16; i++) {
+        if (c8_in->keys[i]) {
+            c8_in->V[x] = i;
+            no_key_pressed = 0;
+            break;
+        }
+    }
+    if (no_key_pressed) {
+        c8_in->PC -= 2;
+    }
+}
+
+static void
+c8_Fx15(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->delay_timer = c8_in->V[x];
+}
+
+static void
+c8_Fx18(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->sound_timer = c8_in->V[x];
+}
+
+static void
+c8_Fx1E(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    c8_in->I += c8_in->V[x];
+}
+
+static void
+c8_Fx29(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t digit = c8_in->V[x];
+    uint16_t fontset_address = &(c8_in->font[0]) - c8->RAM;
+    c8_in->I = fontset_address + digit * 5;
+}
+
+static void
+c8_Fx33(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t value = c8_in->V[x];
+    c8->RAM[c8_in->I] = value / 100;
+    c8->RAM[(c8_in->I) + 1] = value % 100 / 10;
+    c8->RAM[(c8_in->I) + 2] = value % 10;
+}
+
+static void
+c8_Fx55(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    for(uint8_t i = 0; i <= x; i++) {
+        c8->RAM[(c8_in->I) + i] = c8_in->V[i];
+    }
+}
+
+static void
+c8_Fx65(chip8_t *c8, struct internals *c8_in)
+{
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    for (uint8_t i = 0; i <= x; i++) {
+        c8_in->V[i] = c8->RAM[(c8_in->I) + i];
+    }
+}
+*/
+
+void c8_opcode_NULL()
+{
+    /* do nothing */
+}
+
+/*= {
+    c8_00E0, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL,
+    c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL,
+    c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_00EE
+};*/
+
 void
 chip8_init(chip8_t *c8)
 {
@@ -52,6 +393,8 @@ chip8_emulatecycle(chip8_t *c8)
     /* decode opcode */
     /* (OBSOLETE) HUGE switch MUST be moved to separate function */
     /* TODO replace with function pointer table */
+
+    //c8_opcode_table[(c8_in->opcode & 0xF000) >> 12](c8, c8_in);
 
     /* check leftmost 4 bits */
     switch(c8_in->opcode & 0xF000) {
@@ -197,7 +540,6 @@ chip8_emulatecycle(chip8_t *c8)
             break;
         case 0xC000: {
             uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            /* TODO consider using mt19937 for pseudo random numbers */
             c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
             break;
         }
@@ -352,12 +694,6 @@ main(int argc, char **argv)
 
     chip8_t *c8 = NULL;
     uint8_t quit_flag = 0;
-    /*uint8_t delay = 0;
-
-    delay = (uint8_t)strtoul(argv[1], NULL, 10);
-    if (delay > 5) {
-        delay = 5;
-    }*/
 
     c8 = malloc(sizeof(*c8));
     if (c8 == NULL) {
