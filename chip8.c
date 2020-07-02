@@ -6,16 +6,11 @@
 
 typedef void (*c8_opcode_func)(chip8_t *c8, struct internals *c8_in);
 
-/*c8_opcode_func opcodes_main[0xF + 1] = {
-    c8_opcode_NULL, c8_1nnn, c8_2nnn, c8_3xkk, c8_4xkk, c8_5xy0, c8_6xkk,
-    c8_7xkk, c8_opcode_NULL, c8_9xy0, c8_Annn, c8_Bnnn, c8_Cxkk, c8_Dxyn,
-    c8_opcode_NULL, c8_opcode_NULL
-};*/
-
-/*c8_opcode_func opcodes_0[0xE + 1];
-c8_opcode_func opcodes_8[0xE + 1];
-c8_opcode_func opcodes_E[0xA1 + 1];
-c8_opcode_func opcodes_F[0x65 + 1];*/
+static void c8_NULL();
+static void c8_goto_opcodes_0(chip8_t *c8, struct internals *c8_in);
+static void c8_goto_opcodes_8(chip8_t *c8, struct internals *c8_in);
+static void c8_goto_opcodes_E(chip8_t *c8, struct internals *c8_in);
+static void c8_goto_opcodes_F(chip8_t *c8, struct internals *c8_in);
 
 uint8_t sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
@@ -42,7 +37,7 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
     return (bitarr >> shr) | (bitarr << (64 - shr));
 }
 
-/*static void
+static void
 c8_00E0(chip8_t *c8, struct internals *c8_in)
 {
     memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
@@ -226,7 +221,7 @@ static void
 c8_Cxkk(chip8_t *c8, struct internals *c8_in)
 {
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    TODO consider using mt19937 for pseudo random numbers
+    /*TODO consider using mt19937 for pseudo random numbers*/
     c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
 }
 
@@ -357,18 +352,88 @@ c8_Fx65(chip8_t *c8, struct internals *c8_in)
         c8_in->V[i] = c8->RAM[(c8_in->I) + i];
     }
 }
-*/
 
-void c8_opcode_NULL()
+c8_opcode_func opcodes_main[0xF + 1] = {
+    c8_goto_opcodes_0, c8_1nnn, c8_2nnn, c8_3xkk, c8_4xkk, c8_5xy0, c8_6xkk,
+    c8_7xkk, c8_goto_opcodes_8, c8_9xy0, c8_Annn, c8_Bnnn, c8_Cxkk, c8_Dxyn,
+    c8_goto_opcodes_E, c8_goto_opcodes_F
+};
+
+c8_opcode_func opcodes_0[0xE + 1] = {
+    c8_00E0, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
+    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
+    c8_NULL, c8_NULL, c8_NULL, c8_00EE
+};
+
+c8_opcode_func opcodes_8[0xE + 1] = {
+    c8_8xy0, c8_8xy1, c8_8xy2, c8_8xy3, c8_8xy4,
+    c8_8xy5, c8_8xy6, c8_8xy7, c8_NULL, c8_NULL,
+    c8_NULL, c8_NULL, c8_NULL, c8_8xyE
+};
+
+c8_opcode_func opcodes_E[0xA1 + 1];
+c8_opcode_func opcodes_F[0x65 + 1];
+
+static void
+c8_NULL(chip8_t *c8, struct internals *c8_in)
 {
+    fprintf(stderr, "NULL case!\n");
+    fprintf(stderr, "opcode: %x%x%x%x\n", c8_in->opcode & 0xF000,
+            c8_in->opcode & 0x0F00, c8_in->opcode & 0x00F0, c8_in->opcode & 0x000F);
+    /* must be unreacheble */
     /* do nothing */
 }
 
-/*= {
-    c8_00E0, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL,
-    c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL,
-    c8_opcode_NULL, c8_opcode_NULL, c8_opcode_NULL, c8_00EE
-};*/
+static void
+c8_goto_opcodes_0(chip8_t *c8, struct internals *c8_in)
+{
+    opcodes_0[c8_in->opcode & 0x000F](c8, c8_in);
+}
+
+static void
+c8_goto_opcodes_8(chip8_t *c8, struct internals *c8_in)
+{
+    opcodes_8[c8_in->opcode & 0x00FF](c8, c8_in);
+}
+
+static void
+c8_goto_opcodes_E(chip8_t *c8, struct internals *c8_in)
+{
+    opcodes_E[c8_in->opcode & 0x00FF](c8, c8_in);
+}
+
+static void
+c8_goto_opcodes_F(chip8_t *c8, struct internals *c8_in)
+{
+    opcodes_F[c8_in->opcode & 0x00FF](c8, c8_in);
+}
+
+static void
+init_opcodes_E()
+{
+    for (int i = 0; i < 0xA1; i++) {
+        opcodes_E[i] = c8_NULL;
+    }
+    opcodes_E[0x9E] = c8_Ex9E;
+    opcodes_E[0xA1] = c8_ExA1;
+}
+
+static void
+init_opcodes_F()
+{
+    for (int i = 0; i < 0x65; i++) {
+        opcodes_F[i] = c8_NULL;
+    }
+    opcodes_F[0x07] = c8_Fx07;
+    opcodes_F[0x0A] = c8_Fx0A;
+    opcodes_F[0x15] = c8_Fx15;
+    opcodes_F[0x18] = c8_Fx18;
+    opcodes_F[0x1E] = c8_Fx1E;
+    opcodes_F[0x29] = c8_Fx29;
+    opcodes_F[0x33] = c8_Fx33;
+    opcodes_F[0x55] = c8_Fx55;
+    opcodes_F[0x65] = c8_Fx65;
+}
 
 void
 chip8_init(chip8_t *c8)
@@ -394,10 +459,10 @@ chip8_emulatecycle(chip8_t *c8)
     /* (OBSOLETE) HUGE switch MUST be moved to separate function */
     /* TODO replace with function pointer table */
 
-    //c8_opcode_table[(c8_in->opcode & 0xF000) >> 12](c8, c8_in);
+    opcodes_main[(c8_in->opcode & 0xF000) >> 12](c8, c8_in);
 
     /* check leftmost 4 bits */
-    switch(c8_in->opcode & 0xF000) {
+    /*switch(c8_in->opcode & 0xF000) {
         case 0x0000:
             switch (c8_in->opcode & 0x000F) {
                 case 0x0000:
@@ -659,7 +724,7 @@ chip8_emulatecycle(chip8_t *c8)
         default:
             fprintf(stderr, "Error: invalid opcode: 0x%X\n", c8_in->opcode);
             break;
-    }
+    }*/
     /* update timers */
     if (c8_in->delay_timer > 0) {
         c8_in->delay_timer -= 1;
@@ -692,6 +757,9 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    init_opcodes_E();
+    init_opcodes_F();
+
     chip8_t *c8 = NULL;
     uint8_t quit_flag = 0;
 
@@ -723,7 +791,6 @@ main(int argc, char **argv)
             c8->interpreter.draw_flag = 0;
         }
     }
-    sdl_layer_destroy();
-    free(c8);
+    sdl_layer_destroy(); free(c8);
     return EXIT_SUCCESS;
 }

@@ -1,4 +1,5 @@
-CFLAGS = -Wall -Werror -Wextra -std=c99 -pedantic
+# -Werror
+CFLAGS = -Wall -Wextra -std=c99 -pedantic
 LIBS = -lSDL2
 #INCLUDE = -I/usr/include/
 
