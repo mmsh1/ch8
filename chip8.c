@@ -758,10 +758,9 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
         return -1;
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
-    /*for (int i = 0x200; i < 0x1000 - 1; i += 2)
-        fprintf(stdout, "%X\n",
+    for (int i = 0x200; i < 0x1000 - 1; i += 2)
+        fprintf(stdout, "%04X\n",
                 c8->RAM[i] << 8 | c8->RAM[i+1]);
-    */
     fclose(game);
     return 0;
 }
