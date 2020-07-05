@@ -4,13 +4,13 @@
 #include "chip8.h"
 #include "sdl_layer.h"
 
-/*typedef void (*c8_opcode_func)(chip8_t *c8, struct internals *c8_in);
+typedef void (*c8_opcode_func)(chip8_t *c8, struct internals *c8_in);
 
 static void c8_NULL();
 static void c8_goto_opcodes_0(chip8_t *c8, struct internals *c8_in);
 static void c8_goto_opcodes_8(chip8_t *c8, struct internals *c8_in);
 static void c8_goto_opcodes_E(chip8_t *c8, struct internals *c8_in);
-static void c8_goto_opcodes_F(chip8_t *c8, struct internals *c8_in);*/
+static void c8_goto_opcodes_F(chip8_t *c8, struct internals *c8_in);
 
 uint8_t sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
@@ -37,7 +37,7 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
     return (bitarr >> shr) | (bitarr << (64 - shr));
 }
 
-/*static void
+static void
 c8_00E0(chip8_t *c8, struct internals *c8_in)
 {
     memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
@@ -273,7 +273,6 @@ c8_ExA1(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx07(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx07\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     c8_in->V[x] = c8_in->delay_timer;
 }
@@ -281,7 +280,6 @@ c8_Fx07(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx0A(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx0A\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     uint8_t no_key_pressed = 1;
     for (uint8_t i = 0; i < 16; i++) {
@@ -299,7 +297,6 @@ c8_Fx0A(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx15(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx15\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     c8_in->delay_timer = c8_in->V[x];
 }
@@ -307,7 +304,6 @@ c8_Fx15(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx18(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx18\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     c8_in->sound_timer = c8_in->V[x];
 }
@@ -315,7 +311,6 @@ c8_Fx18(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx1E(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx1E\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     c8_in->I += c8_in->V[x];
 }
@@ -323,7 +318,6 @@ c8_Fx1E(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx29(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx29\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     uint8_t digit = c8_in->V[x];
     uint16_t fontset_address = &(c8_in->font[0]) - c8->RAM;
@@ -333,7 +327,6 @@ c8_Fx29(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx33(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx33\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     uint8_t value = c8_in->V[x];
     c8->RAM[c8_in->I] = value / 100;
@@ -344,7 +337,6 @@ c8_Fx33(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx55(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "c8_Fx55\n");
     uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     for(uint8_t i = 0; i <= x; i++) {
         c8->RAM[(c8_in->I) + i] = c8_in->V[i];
@@ -354,8 +346,7 @@ c8_Fx55(chip8_t *c8, struct internals *c8_in)
 static void
 c8_Fx65(chip8_t *c8, struct internals *c8_in)
 {
-   fprintf(stderr, "c8_Fx65\n");
-   uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
     for (uint8_t i = 0; i <= x; i++) {
         c8_in->V[i] = c8->RAM[(c8_in->I) + i];
     }
@@ -385,7 +376,7 @@ c8_opcode_func opcodes_F[0x65 + 1];
 static void
 c8_NULL(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "NULL case!\n");
+    fprintf(stderr, "calling c8_NULL\n");
     fprintf(stderr, "opcode: %x\n", c8_in->opcode & 0xFFFF);
 }
 
@@ -410,7 +401,6 @@ c8_goto_opcodes_E(chip8_t *c8, struct internals *c8_in)
 static void
 c8_goto_opcodes_F(chip8_t *c8, struct internals *c8_in)
 {
-    fprintf(stderr, "F-opcode: %x\n", c8_in->opcode & 0x00FF);
     opcodes_F[c8_in->opcode & 0x00FF](c8, c8_in);
 }
 
@@ -439,7 +429,7 @@ init_opcodes_F()
     opcodes_F[0x33] = c8_Fx33;
     opcodes_F[0x55] = c8_Fx55;
     opcodes_F[0x65] = c8_Fx65;
-}*/
+}
 
 void
 chip8_init(chip8_t *c8)
@@ -461,284 +451,9 @@ chip8_emulatecycle(chip8_t *c8)
     /* increment program counter */
     c8_in->PC += 2;
 
-    /* decode opcode */
-    /* (OBSOLETE) HUGE switch MUST be moved to separate function */
-    /* TODO replace with function pointer table */
+    /* execute opcode */
+    opcodes_main[(c8_in->opcode & 0xF000) >> 12](c8, c8_in);
 
-    //opcodes_main[(c8_in->opcode & 0xF000) >> 12](c8, c8_in);
-
-    /* check leftmost 4 bits */
-    switch(c8_in->opcode & 0xF000) {
-        case 0x0000:
-            switch (c8_in->opcode & 0x000F) {
-                case 0x0000:
-                    memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
-                    c8_in->draw_flag = 1;
-                    break;
-                case 0x000E:
-                    c8_in->PC = c8_in->stack[c8_in->SP];
-                    c8_in->SP -= 1;
-                    break;
-            }
-            break;
-        case 0x1000:
-            c8_in->PC = c8_in->opcode & 0x0FFF;
-            break;
-        case 0x2000:
-            c8_in->SP += 1;
-            c8_in->stack[c8_in->SP] = c8_in->PC;
-            c8_in->PC = c8_in->opcode & 0x0FFF;
-            break;
-        case 0x3000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            if (c8_in->V[x] == (c8_in->opcode & 0x00FF)) {
-                c8_in->PC += 2;
-            }
-            break;
-        }
-        case 0x4000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            if (c8_in->V[x] != (c8_in->opcode & 0x00FF)) {
-                c8_in->PC += 2;
-            }
-            break;
-        }
-        case 0x5000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-            if (c8_in->V[x] == c8_in->V[y]) {
-                c8_in->PC += 2;
-            }
-            break;
-        }
-        case 0x6000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            c8_in->V[x] = c8_in->opcode & 0x00FF;
-            break;
-        }
-        case 0x7000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            c8_in->V[x] += c8_in->opcode & 0x00FF;
-            break;
-        }
-        case 0x8000:
-            switch (c8_in->opcode & 0x000F) {
-                case 0x0000: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    c8_in->V[x] = c8_in->V[y];
-                    break;
-                }
-                case 0x0001: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    c8_in->V[x] |= c8_in->V[y];
-                    break;
-                }
-                case 0x0002: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    c8_in->V[x] &= c8_in->V[y];
-                    break;
-                }
-                case 0x0003: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    c8_in->V[x] ^= c8_in->V[y];
-                    break;
-                }
-                case 0x0004: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    uint16_t sum = c8_in->V[x] + c8_in->V[y];
-                    if (sum > 0xFF) {
-                        c8_in->V[0xF] = 1;
-                    } else {
-                        c8_in->V[0xF] = 0;
-                    }
-                    c8_in->V[x] = sum & 0x00FF;
-                    break;
-                }
-                case 0x0005: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    if (c8_in->V[x] > c8_in->V[y]) {
-                        c8_in->V[0xF] = 1;
-                    } else {
-                        c8_in->V[0xF] = 0;
-                    }
-                    c8_in->V[x] = c8_in->V[x] - c8_in->V[y];
-                    break;
-                }
-                case 0x0006: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    c8_in->V[0xF] = (c8_in->V[x] & 0x01);
-                    c8_in->V[x] >>= 1;
-                    break;
-                }
-                case 0x0007: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-                    if (c8_in->V[y] > c8_in->V[x]) {
-                        c8_in->V[0xF] = 1;
-                    } else {
-                        c8_in->V[0xF] = 0;
-                    }
-                    c8_in->V[x] = c8_in->V[y] - c8_in->V[x];
-                    break;
-                }
-                case 0x000E: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    c8_in->V[0xF] = (c8_in->V[x] & 0x80) >> 7;
-                    c8_in->V[x] <<= 1;
-                    break;
-                }
-                default: {
-                    fprintf(stderr, "%x\n", c8_in->opcode & 0xFFFF);
-                    fprintf(stderr, "unknown 8-opcode encountered\n");}
-            }
-            break;
-        case 0x9000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-            if (c8_in->V[x] != c8_in->V[y]) {
-                c8_in->PC += 2;
-            }
-            break;
-        }
-        case 0xA000:
-            c8_in->I = c8_in->opcode & 0x0FFF;
-            break;
-        case 0xB000:
-            c8_in->PC = (c8_in->opcode & 0x0FFF) + c8_in->V[0];
-            break;
-        case 0xC000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
-            break;
-        }
-        case 0xD000: {
-            uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-            uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-            uint8_t height = (c8_in->opcode & 0x000F);
-
-            uint8_t ypos = c8_in->V[y];
-            uint8_t xpos = c8_in->V[x] + 8;
-            uint64_t flag = 0;
-
-            c8_in->V[0xF] = 0;
-
-            for (int row = 0; row < height; row++) {
-                uint64_t *disp_row = &(c8_in->disp_mem[(ypos + row) % 32]);
-                uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8_in->I + row], xpos);
-                flag |= *disp_row & sprite_row;
-                *disp_row ^= sprite_row;
-
-                if (flag) {
-                    c8_in->V[0xF] = 1;
-                }
-            }
-            c8_in->draw_flag = 1;
-            break;
-        }
-
-        case 0xE000:
-            switch (c8_in->opcode & 0x00FF) {
-                case 0x009E: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t keynum = c8_in->V[x];
-                    if (c8_in->keys[keynum]) {
-                        c8_in->PC += 2;
-                    }
-                    break;
-                }
-                case 0x00A1: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t keynum = c8_in->V[x];
-                    if (!c8_in->keys[keynum]) {
-                        c8_in->PC += 2;
-                    }
-                    break;
-                }
-                default:
-                    fprintf(stderr, "%x\n", c8_in->opcode & 0xFFFF);
-                    fprintf(stderr, "unknown E-opcode encountered\n");}
-            break;
-        case 0xF000:
-            switch (c8_in->opcode & 0x00FF) {
-                case 0x0007: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    c8_in->V[x] = c8_in->delay_timer;
-                    break;
-                }
-                case 0x000A: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t no_key_pressed = 1;
-                    for (uint8_t i = 0; i < 16; i++) {
-                        if (c8_in->keys[i]) {
-                        c8_in->V[x] = i;
-                        no_key_pressed = 0;
-                        break;
-                        }
-                    }
-                    if (no_key_pressed) {
-                        c8_in->PC -= 2;
-                    }
-                    break;
-                }
-                case 0x0015: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    c8_in->delay_timer = c8_in->V[x];
-                    break;
-                }
-                case 0x0018: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    c8_in->sound_timer = c8_in->V[x];
-                    break;
-                }
-                case 0x001E: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    c8_in->I += c8_in->V[x];
-                    break;
-                }
-                case 0x0029: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t digit = c8_in->V[x];
-                    uint16_t fontset_address = &(c8_in->font[0]) - c8->RAM;
-                    c8_in->I = fontset_address + digit * 5;
-                    break;
-                }
-                case 0x0033: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    uint8_t value = c8_in->V[x];
-                    c8->RAM[c8_in->I] = value / 100;
-                    c8->RAM[(c8_in->I) + 1] = value % 100 / 10;
-                    c8->RAM[(c8_in->I) + 2] = value % 10;
-                    break;
-                }
-                case 0x0055: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    for(uint8_t i = 0; i <= x; i++) {
-                        c8->RAM[(c8_in->I) + i] = c8_in->V[i];
-                    }
-                    break;
-                }
-                case 0x0065: {
-                    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-                    for (uint8_t i = 0; i <= x; i++) {
-                        c8_in->V[i] = c8->RAM[(c8_in->I) + i];
-                    }
-                    break;
-                }
-                default:
-                    fprintf(stderr, "%x\n", c8_in->opcode & 0xFFFF);
-                    fprintf(stderr, "unknown F-opcode encountered\n");
-            }
-            break;
-        default:
-            fprintf(stderr, "Error: invalid opcode: 0x%X\n", c8_in->opcode);
-            break;
-    }
     /* update timers */
     if (c8_in->delay_timer > 0) {
         c8_in->delay_timer -= 1;
@@ -758,9 +473,6 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
         return -1;
     }
     fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
-    for (int i = 0x200; i < 0x1000 - 1; i += 2)
-        fprintf(stdout, "%04X\n",
-                c8->RAM[i] << 8 | c8->RAM[i+1]);
     fclose(game);
     return 0;
 }
@@ -774,8 +486,8 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    /*init_opcodes_E();
-    init_opcodes_F();*/
+    init_opcodes_E();
+    init_opcodes_F();
 
     chip8_t *c8 = NULL;
     uint8_t quit_flag = 0;
@@ -807,7 +519,9 @@ main(int argc, char **argv)
                            C8_DISP_WIDTH * C8_DISP_HEIGHT);
             c8->interpreter.draw_flag = 0;
         }
+        SDL_Delay(1);
     }
-    sdl_layer_destroy(); free(c8);
+    sdl_layer_destroy();
+    free(c8);
     return EXIT_SUCCESS;
 }
