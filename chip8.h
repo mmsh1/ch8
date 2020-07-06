@@ -27,7 +27,7 @@ typedef union {
         uint16_t I;
 
         uint64_t disp_mem[C8_DISP_HEIGHT];
-    } interpreter;
+    } core;
 
 } chip8_t;
 

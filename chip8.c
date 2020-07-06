@@ -4,13 +4,69 @@
 #include "chip8.h"
 #include "sdl_layer.h"
 
-typedef void (*c8_opcode_func)(chip8_t *c8 /*struct internals *c8_in*/);
+typedef void (*c8_opcode_func)(chip8_t *c8);
 
-static void c8_NULL();
-static void c8_goto_opcodes_0(chip8_t *c8);
-static void c8_goto_opcodes_8(chip8_t *c8);
-static void c8_goto_opcodes_E(chip8_t *c8);
-static void c8_goto_opcodes_F(chip8_t *c8);
+static void c8_00E0(chip8_t*);
+static void c8_00EE(chip8_t*);
+static void c8_1nnn(chip8_t*);
+static void c8_2nnn(chip8_t*);
+static void c8_3xkk(chip8_t*);
+static void c8_4xkk(chip8_t*);
+static void c8_5xy0(chip8_t*);
+static void c8_6xkk(chip8_t*);
+static void c8_7xkk(chip8_t*);
+static void c8_8xy0(chip8_t*);
+static void c8_8xy1(chip8_t*);
+static void c8_8xy2(chip8_t*);
+static void c8_8xy3(chip8_t*);
+static void c8_8xy4(chip8_t*);
+static void c8_8xy5(chip8_t*);
+static void c8_8xy6(chip8_t*);
+static void c8_8xy7(chip8_t*);
+static void c8_8xyE(chip8_t*);
+static void c8_9xy0(chip8_t*);
+static void c8_Annn(chip8_t*);
+static void c8_Bnnn(chip8_t*);
+static void c8_Cxkk(chip8_t*);
+static void c8_Dxyn(chip8_t*);
+static void c8_Ex9E(chip8_t*);
+static void c8_ExA1(chip8_t*);
+static void c8_Fx07(chip8_t*);
+static void c8_Fx0A(chip8_t*);
+static void c8_Fx15(chip8_t*);
+static void c8_Fx18(chip8_t*);
+static void c8_Fx1E(chip8_t*);
+static void c8_Fx29(chip8_t*);
+static void c8_Fx33(chip8_t*);
+static void c8_Fx55(chip8_t*);
+static void c8_Fx65(chip8_t*);
+static void c8_NULL(chip8_t*);
+static void c8_goto_opcodes_0(chip8_t*);
+static void c8_goto_opcodes_8(chip8_t*);
+static void c8_goto_opcodes_E(chip8_t*);
+static void c8_goto_opcodes_F(chip8_t*);
+
+c8_opcode_func opcodes_main[0xF + 1] = {
+    c8_goto_opcodes_0, c8_1nnn, c8_2nnn, c8_3xkk, c8_4xkk, c8_5xy0, c8_6xkk,
+    c8_7xkk, c8_goto_opcodes_8, c8_9xy0, c8_Annn, c8_Bnnn, c8_Cxkk, c8_Dxyn,
+    c8_goto_opcodes_E, c8_goto_opcodes_F
+};
+
+c8_opcode_func opcodes_0[0xE + 1] = {
+    c8_00E0, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
+    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
+    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_00EE
+};
+
+c8_opcode_func opcodes_8[0xE + 1] = {
+    c8_8xy0, c8_8xy1, c8_8xy2, c8_8xy3, c8_8xy4,
+    c8_8xy5, c8_8xy6, c8_8xy7, c8_NULL, c8_NULL,
+    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_8xyE
+};
+
+c8_opcode_func opcodes_E[0xA1 + 1];
+c8_opcode_func opcodes_F[0x65 + 1];
+
 
 uint8_t sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
@@ -40,406 +96,347 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
 static void
 c8_00E0(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    memset(c8_in->disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
-    c8_in->draw_flag = 1;
+    memset(c8->core.disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
+    c8->core.draw_flag = 1;
 }
 
 static void
 c8_00EE(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    c8_in->PC = c8_in->stack[c8_in->SP];
-    c8_in->SP -= 1;
+    c8->core.PC = c8->core.stack[c8->core.SP];
+    c8->core.SP -= 1;
 }
 
 static void
 c8_1nnn(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    c8_in->PC = c8_in->opcode & 0x0FFF;
+    c8->core.PC = c8->core.opcode & 0x0FFF;
 }
 
 static void
 c8_2nnn(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    c8_in->SP += 1;
-    c8_in->stack[c8_in->SP] = c8_in->PC;
-    c8_in->PC = c8_in->opcode & 0x0FFF;
+    c8->core.SP += 1;
+    c8->core.stack[c8->core.SP] = c8->core.PC;
+    c8->core.PC = c8->core.opcode & 0x0FFF;
 }
 
 static void
 c8_3xkk(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    if (c8_in->V[x] == (c8_in->opcode & 0x00FF)) {
-        c8_in->PC += 2;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    if (c8->core.V[x] == (c8->core.opcode & 0x00FF)) {
+        c8->core.PC += 2;
     }
 }
 
 static void
 c8_4xkk(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    if (c8_in->V[x] != (c8_in->opcode & 0x00FF)) {
-        c8_in->PC += 2;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    if (c8->core.V[x] != (c8->core.opcode & 0x00FF)) {
+        c8->core.PC += 2;
     }
 }
 
 static void
 c8_5xy0(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    if (c8_in->V[x] == c8_in->V[y]) {
-        c8_in->PC += 2;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    if (c8->core.V[x] == c8->core.V[y]) {
+        c8->core.PC += 2;
     }
 }
 
 static void
 c8_6xkk(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->V[x] = c8_in->opcode & 0x00FF;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.V[x] = c8->core.opcode & 0x00FF;
 }
 
 static void
 c8_7xkk(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->V[x] += c8_in->opcode & 0x00FF;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.V[x] += c8->core.opcode & 0x00FF;
 }
 
 static void
 c8_8xy0(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    c8_in->V[x] = c8_in->V[y];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    c8->core.V[x] = c8->core.V[y];
 }
 
 static void
 c8_8xy1(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    c8_in->V[x] |= c8_in->V[y];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    c8->core.V[x] |= c8->core.V[y];
 }
 
 static void
 c8_8xy2(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    c8_in->V[x] &= c8_in->V[y];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    c8->core.V[x] &= c8->core.V[y];
 }
 
 static void
 c8_8xy3(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    c8_in->V[x] ^= c8_in->V[y];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    c8->core.V[x] ^= c8->core.V[y];
 }
 
 static void
 c8_8xy4(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    uint16_t sum = c8_in->V[x] + c8_in->V[y];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    uint16_t sum = c8->core.V[x] + c8->core.V[y];
     if (sum > 0xFF) {
-        c8_in->V[0xF] = 1;
+        c8->core.V[0xF] = 1;
     } else {
-        c8_in->V[0xF] = 0;
+        c8->core.V[0xF] = 0;
     }
-    c8_in->V[x] = sum & 0x00FF;
+    c8->core.V[x] = sum & 0x00FF;
 }
 
 static void
 c8_8xy5(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    if (c8_in->V[x] > c8_in->V[y]) {
-        c8_in->V[0xF] = 1;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    if (c8->core.V[x] > c8->core.V[y]) {
+        c8->core.V[0xF] = 1;
     } else {
-        c8_in->V[0xF] = 0;
+        c8->core.V[0xF] = 0;
     }
-    c8_in->V[x] = c8_in->V[x] - c8_in->V[y];
+    c8->core.V[x] = c8->core.V[x] - c8->core.V[y];
 }
 
 static void
 c8_8xy6(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->V[0xF] = (c8_in->V[x] & 0x01);
-    c8_in->V[x] >>= 1;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.V[0xF] = (c8->core.V[x] & 0x01);
+    c8->core.V[x] >>= 1;
 }
 
 static void
 c8_8xy7(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    if (c8_in->V[y] > c8_in->V[x]) {
-        c8_in->V[0xF] = 1;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    if (c8->core.V[y] > c8->core.V[x]) {
+        c8->core.V[0xF] = 1;
     } else {
-        c8_in->V[0xF] = 0;
+        c8->core.V[0xF] = 0;
     }
-    c8_in->V[x] = c8_in->V[y] - c8_in->V[x];
+    c8->core.V[x] = c8->core.V[y] - c8->core.V[x];
 }
 
 static void
 c8_8xyE(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->V[0xF] = (c8_in->V[x] & 0x80) >> 7;
-    c8_in->V[x] <<= 1;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.V[0xF] = (c8->core.V[x] & 0x80) >> 7;
+    c8->core.V[x] <<= 1;
 }
 
 static void
 c8_9xy0(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    if (c8_in->V[x] != c8_in->V[y]) {
-        c8_in->PC += 2;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    if (c8->core.V[x] != c8->core.V[y]) {
+        c8->core.PC += 2;
     }
 }
 
 static void
 c8_Annn(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    c8_in->I = c8_in->opcode & 0x0FFF;
+    c8->core.I = c8->core.opcode & 0x0FFF;
 }
 
 static void
 c8_Bnnn(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    c8_in->PC = (c8_in->opcode & 0x0FFF) + c8_in->V[0];
+    c8->core.PC = (c8->core.opcode & 0x0FFF) + c8->core.V[0];
 }
 
 static void
 c8_Cxkk(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->V[x] = (rand() % 256) & (c8_in->opcode & 0x00FF);
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.V[x] = (rand() % 256) & (c8->core.opcode & 0x00FF);
 }
 
 static void
 c8_Dxyn(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t y = (c8_in->opcode & 0x00F0) >> 4;
-    uint8_t height = (c8_in->opcode & 0x000F);
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
+    uint8_t height = (c8->core.opcode & 0x000F);
 
-    uint8_t ypos = c8_in->V[y];
-    uint8_t xpos = c8_in->V[x] + 8;
+    uint8_t ypos = c8->core.V[y];
+    uint8_t xpos = c8->core.V[x] + 8;
     uint64_t flag = 0;
 
-    c8_in->V[0xF] = 0;
+    c8->core.V[0xF] = 0;
 
     for (int row = 0; row < height; row++) {
-        uint64_t *disp_row = &(c8_in->disp_mem[(ypos + row) % 32]);
-        uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8_in->I + row], xpos);
+        uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 32]);
+        uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
         flag |= *disp_row & sprite_row;
         *disp_row ^= sprite_row;
 
         if (flag) {
-            c8_in->V[0xF] = 1;
+            c8->core.V[0xF] = 1;
         }
     }
-    c8_in->draw_flag = 1;
+    c8->core.draw_flag = 1;
 }
 
 static void
 c8_Ex9E(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t keynum = c8_in->V[x];
-    if (c8_in->keys[keynum]) {
-        c8_in->PC += 2;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t keynum = c8->core.V[x];
+    if (c8->core.keys[keynum]) {
+        c8->core.PC += 2;
     }
 }
 
 static void
 c8_ExA1(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t keynum = c8_in->V[x];
-    if (!c8_in->keys[keynum]) {
-        c8_in->PC += 2;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t keynum = c8->core.V[x];
+    if (!c8->core.keys[keynum]) {
+        c8->core.PC += 2;
     }
 }
 
 static void
 c8_Fx07(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->V[x] = c8_in->delay_timer;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.V[x] = c8->core.delay_timer;
 }
 
 static void
 c8_Fx0A(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t no_key_pressed = 1;
     for (uint8_t i = 0; i < 16; i++) {
-        if (c8_in->keys[i]) {
-            c8_in->V[x] = i;
+        if (c8->core.keys[i]) {
+            c8->core.V[x] = i;
             no_key_pressed = 0;
             break;
         }
     }
     if (no_key_pressed) {
-        c8_in->PC -= 2;
+        c8->core.PC -= 2;
     }
 }
 
 static void
 c8_Fx15(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->delay_timer = c8_in->V[x];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.delay_timer = c8->core.V[x];
 }
 
 static void
 c8_Fx18(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->sound_timer = c8_in->V[x];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.sound_timer = c8->core.V[x];
 }
 
 static void
 c8_Fx1E(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    c8_in->I += c8_in->V[x];
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    c8->core.I += c8->core.V[x];
 }
 
 static void
 c8_Fx29(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t digit = c8_in->V[x];
-    uint16_t fontset_address = &(c8_in->font[0]) - c8->RAM;
-    c8_in->I = fontset_address + digit * 5;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t digit = c8->core.V[x];
+    uint16_t fontset_address = &(c8->core.font[0]) - c8->RAM;
+    c8->core.I = fontset_address + digit * 5;
 }
 
 static void
 c8_Fx33(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
-    uint8_t value = c8_in->V[x];
-    c8->RAM[c8_in->I] = value / 100;
-    c8->RAM[(c8_in->I) + 1] = value % 100 / 10;
-    c8->RAM[(c8_in->I) + 2] = value % 10;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t value = c8->core.V[x];
+    c8->RAM[c8->core.I] = value / 100;
+    c8->RAM[(c8->core.I) + 1] = value % 100 / 10;
+    c8->RAM[(c8->core.I) + 2] = value % 10;
 }
 
 static void
 c8_Fx55(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     for(uint8_t i = 0; i <= x; i++) {
-        c8->RAM[(c8_in->I) + i] = c8_in->V[i];
+        c8->RAM[(c8->core.I) + i] = c8->core.V[i];
     }
 }
 
 static void
 c8_Fx65(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    uint8_t x = (c8_in->opcode & 0x0F00) >> 8;
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     for (uint8_t i = 0; i <= x; i++) {
-        c8_in->V[i] = c8->RAM[(c8_in->I) + i];
+        c8->core.V[i] = c8->RAM[(c8->core.I) + i];
     }
 }
-
-c8_opcode_func opcodes_main[0xF + 1] = {
-    c8_goto_opcodes_0, c8_1nnn, c8_2nnn, c8_3xkk, c8_4xkk, c8_5xy0, c8_6xkk,
-    c8_7xkk, c8_goto_opcodes_8, c8_9xy0, c8_Annn, c8_Bnnn, c8_Cxkk, c8_Dxyn,
-    c8_goto_opcodes_E, c8_goto_opcodes_F
-};
-
-c8_opcode_func opcodes_0[0xE + 1] = {
-    c8_00E0, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
-    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
-    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_00EE
-};
-
-c8_opcode_func opcodes_8[0xE + 1] = {
-    c8_8xy0, c8_8xy1, c8_8xy2, c8_8xy3, c8_8xy4,
-    c8_8xy5, c8_8xy6, c8_8xy7, c8_NULL, c8_NULL,
-    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_8xyE
-};
-
-c8_opcode_func opcodes_E[0xA1 + 1];
-c8_opcode_func opcodes_F[0x65 + 1];
 
 static void
 c8_NULL(chip8_t *c8)
 {
     fprintf(stderr, "calling c8_NULL\n");
-    fprintf(stderr, "opcode: %x\n", c8->interpreter.opcode & 0xFFFF);
+    fprintf(stderr, "opcode: %x\n", c8->core.opcode & 0xFFFF);
 }
 
 static void
 c8_goto_opcodes_0(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    opcodes_0[c8_in->opcode & 0x000F](c8);
+    opcodes_0[c8->core.opcode & 0x000F](c8);
 }
 
 static void
 c8_goto_opcodes_8(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    opcodes_8[(c8_in->opcode) & 0x000F](c8);
+    opcodes_8[(c8->core.opcode) & 0x000F](c8);
 }
 
 static void
 c8_goto_opcodes_E(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    opcodes_E[c8_in->opcode & 0x00FF](c8);
+    opcodes_E[c8->core.opcode & 0x00FF](c8);
 }
 
 static void
 c8_goto_opcodes_F(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-    opcodes_F[c8_in->opcode & 0x00FF](c8);
+    opcodes_F[c8->core.opcode & 0x00FF](c8);
 }
 
 static void
@@ -473,31 +470,29 @@ void
 chip8_init(chip8_t *c8)
 {
     memset(c8, 0, sizeof(*c8));
-    c8->interpreter.PC = 0x200;
-    memcpy(c8->interpreter.font, sprites, 80);
+    c8->core.PC = 0x200;
+    memcpy(c8->core.font, sprites, 80);
 }
 
 void
 chip8_emulatecycle(chip8_t *c8)
 {
-    struct internals *c8_in = &(c8->interpreter);
-
     /* fetch opcode */
-    c8_in->opcode =
-        c8->RAM[c8_in->PC] << 8 | c8->RAM[(c8_in->PC) + 1];
+    c8->core.opcode =
+        c8->RAM[c8->core.PC] << 8 | c8->RAM[(c8->core.PC) + 1];
 
     /* increment program counter */
-    c8_in->PC += 2;
+    c8->core.PC += 2;
 
     /* execute opcode */
-    opcodes_main[(c8_in->opcode & 0xF000) >> 12](c8);
+    opcodes_main[(c8->core.opcode & 0xF000) >> 12](c8);
 
     /* update timers */
-    if (c8_in->delay_timer > 0) {
-        c8_in->delay_timer -= 1;
+    if (c8->core.delay_timer > 0) {
+        c8->core.delay_timer -= 1;
     }
-    if (c8_in->sound_timer > 0) {
-        c8_in->sound_timer -= 1;
+    if (c8->core.sound_timer > 0) {
+        c8->core.sound_timer -= 1;
     }
 }
 
@@ -548,14 +543,14 @@ main(int argc, char **argv)
     }
 
     while (!quit_flag) {
-        sdl_handle_keystroke(c8->interpreter.keys, &quit_flag);
+        sdl_handle_keystroke(c8->core.keys, &quit_flag);
         chip8_emulatecycle(c8);
-        if (c8->interpreter.draw_flag) {
+        if (c8->core.draw_flag) {
             uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];
-            sdl_layer_draw(c8->interpreter.disp_mem,
+            sdl_layer_draw(c8->core.disp_mem,
                            output,
                            C8_DISP_WIDTH * C8_DISP_HEIGHT);
-            c8->interpreter.draw_flag = 0;
+            c8->core.draw_flag = 0;
         }
         SDL_Delay(1);
     }
