@@ -31,10 +31,10 @@ typedef union {
 
 } chip8_t;
 
-void chip8_init(chip8_t *c8);
+void chip8_init(chip8_t *);
 
-void chip8_emulatecycle(chip8_t *c8);
+void chip8_emulatecycle(chip8_t *);
 
-int chip8_loadgame(chip8_t *c8, const char *game_name);
+int chip8_loadgame(chip8_t *, const char *);
 
 #endif /* CHIP_8 */
