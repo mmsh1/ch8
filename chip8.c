@@ -1,10 +1,10 @@
 #include <stdlib.h>
-#include <string.h>
+#include <string.h> /* memcpy */
 
 #include "chip8.h"
 #include "sdl_layer.h"
 
-typedef void (*c8_opcode_func)(chip8_t *c8);
+typedef void (*c8_opcode_func)(chip8_t *);
 
 static void c8_00E0(chip8_t *);
 static void c8_00EE(chip8_t *);
@@ -41,31 +41,22 @@ static void c8_Fx33(chip8_t *);
 static void c8_Fx55(chip8_t *);
 static void c8_Fx65(chip8_t *);
 static void c8_NULL(chip8_t *);
-static void c8_goto_opcodes_0(chip8_t *);
-static void c8_goto_opcodes_8(chip8_t *);
-static void c8_goto_opcodes_E(chip8_t *);
-static void c8_goto_opcodes_F(chip8_t *);
+static void c8_goto_optable_0(chip8_t *);
+static void c8_goto_optable_8(chip8_t *);
+static void c8_goto_optable_E(chip8_t *);
+static void c8_goto_optable_F(chip8_t *);
 
-c8_opcode_func opcodes_main[0xF + 1] = {
-    c8_goto_opcodes_0, c8_1nnn, c8_2nnn, c8_3xkk, c8_4xkk, c8_5xy0, c8_6xkk,
-    c8_7xkk, c8_goto_opcodes_8, c8_9xy0, c8_Annn, c8_Bnnn, c8_Cxkk, c8_Dxyn,
-    c8_goto_opcodes_E, c8_goto_opcodes_F
-};
+static void init_optable_main();
+static void init_optable_0();
+static void init_optable_8();
+static void init_optable_E();
+static void init_optable_F();
 
-c8_opcode_func opcodes_0[0xE + 1] = {
-    c8_00E0, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
-    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_NULL,
-    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_00EE
-};
-
-c8_opcode_func opcodes_8[0xE + 1] = {
-    c8_8xy0, c8_8xy1, c8_8xy2, c8_8xy3, c8_8xy4,
-    c8_8xy5, c8_8xy6, c8_8xy7, c8_NULL, c8_NULL,
-    c8_NULL, c8_NULL, c8_NULL, c8_NULL, c8_8xyE
-};
-
-c8_opcode_func opcodes_E[0xA1 + 1];
-c8_opcode_func opcodes_F[0x65 + 1];
+c8_opcode_func optable_main[0xF + 1];
+c8_opcode_func optable_0[0xE + 1];
+c8_opcode_func optable_8[0xE + 1];
+c8_opcode_func optable_E[0xA1 + 1];
+c8_opcode_func optable_F[0x65 + 1];
 
 
 uint8_t sprites[80] = {
@@ -416,54 +407,115 @@ c8_NULL(chip8_t *c8)
 }
 
 static void
-c8_goto_opcodes_0(chip8_t *c8)
+c8_goto_optable_0(chip8_t *c8)
 {
-    opcodes_0[c8->core.opcode & 0x000F](c8);
+    optable_0[c8->core.opcode & 0x000F](c8);
 }
 
 static void
-c8_goto_opcodes_8(chip8_t *c8)
+c8_goto_optable_8(chip8_t *c8)
 {
-    opcodes_8[(c8->core.opcode) & 0x000F](c8);
+    optable_8[(c8->core.opcode) & 0x000F](c8);
 }
 
 static void
-c8_goto_opcodes_E(chip8_t *c8)
+c8_goto_optable_E(chip8_t *c8)
 {
-    opcodes_E[c8->core.opcode & 0x00FF](c8);
+    optable_E[c8->core.opcode & 0x00FF](c8);
 }
 
 static void
-c8_goto_opcodes_F(chip8_t *c8)
+c8_goto_optable_F(chip8_t *c8)
 {
-    opcodes_F[c8->core.opcode & 0x00FF](c8);
+    optable_F[c8->core.opcode & 0x00FF](c8);
 }
 
 static void
-init_opcodes_E()
+init_optable_main()
+{
+    optable_main[0x0] = c8_goto_optable_0;
+    optable_main[0x1] = c8_1nnn;
+    optable_main[0x2] = c8_2nnn;
+    optable_main[0x3] = c8_3xkk;
+    optable_main[0x4] = c8_4xkk;
+    optable_main[0x5] = c8_5xy0;
+    optable_main[0x6] = c8_6xkk;
+    optable_main[0x7] = c8_7xkk;
+    optable_main[0x8] = c8_goto_optable_8;
+    optable_main[0x9] = c8_9xy0;
+    optable_main[0xA] = c8_Annn;
+    optable_main[0xB] = c8_Bnnn;
+    optable_main[0xC] = c8_Cxkk;
+    optable_main[0xD] = c8_Dxyn;
+    optable_main[0xE] = c8_goto_optable_E;
+    optable_main[0xF] = c8_goto_optable_F;
+}
+
+static void
+init_optable_0()
+{
+    optable_0[0x0] = c8_00E0;
+    optable_0[0x1] = c8_NULL;
+    optable_0[0x2] = c8_NULL;
+    optable_0[0x3] = c8_NULL;
+    optable_0[0x4] = c8_NULL;
+    optable_0[0x5] = c8_NULL;
+    optable_0[0x6] = c8_NULL;
+    optable_0[0x7] = c8_NULL;
+    optable_0[0x8] = c8_NULL;
+    optable_0[0x9] = c8_NULL;
+    optable_0[0xA] = c8_NULL;
+    optable_0[0xB] = c8_NULL;
+    optable_0[0xC] = c8_NULL;
+    optable_0[0xD] = c8_NULL;
+    optable_0[0xE] = c8_00EE;
+}
+
+static void
+init_optable_8()
+{
+    optable_8[0x0] = c8_8xy0;
+    optable_8[0x1] = c8_8xy1;
+    optable_8[0x2] = c8_8xy2;
+    optable_8[0x3] = c8_8xy3;
+    optable_8[0x4] = c8_8xy4;
+    optable_8[0x5] = c8_8xy5;
+    optable_8[0x6] = c8_8xy6;
+    optable_8[0x7] = c8_8xy7;
+    optable_8[0x8] = c8_NULL;
+    optable_8[0x9] = c8_NULL;
+    optable_8[0xA] = c8_NULL;
+    optable_8[0xB] = c8_NULL;
+    optable_8[0xC] = c8_NULL;
+    optable_8[0xD] = c8_NULL;
+    optable_8[0xE] = c8_8xyE;
+}
+
+static void
+init_optable_E()
 {
     for (int i = 0; i < 0xA1 + 1; i++) {
-        opcodes_E[i] = c8_NULL;
+        optable_E[i] = c8_NULL;
     }
-    opcodes_E[0x9E] = c8_Ex9E;
-    opcodes_E[0xA1] = c8_ExA1;
+    optable_E[0x9E] = c8_Ex9E;
+    optable_E[0xA1] = c8_ExA1;
 }
 
 static void
-init_opcodes_F()
+init_optable_F()
 {
     for (int i = 0; i < 0x65 + 1; i++) {
-        opcodes_F[i] = c8_NULL;
+        optable_F[i] = c8_NULL;
     }
-    opcodes_F[0x07] = c8_Fx07;
-    opcodes_F[0x0A] = c8_Fx0A;
-    opcodes_F[0x15] = c8_Fx15;
-    opcodes_F[0x18] = c8_Fx18;
-    opcodes_F[0x1E] = c8_Fx1E;
-    opcodes_F[0x29] = c8_Fx29;
-    opcodes_F[0x33] = c8_Fx33;
-    opcodes_F[0x55] = c8_Fx55;
-    opcodes_F[0x65] = c8_Fx65;
+    optable_F[0x07] = c8_Fx07;
+    optable_F[0x0A] = c8_Fx0A;
+    optable_F[0x15] = c8_Fx15;
+    optable_F[0x18] = c8_Fx18;
+    optable_F[0x1E] = c8_Fx1E;
+    optable_F[0x29] = c8_Fx29;
+    optable_F[0x33] = c8_Fx33;
+    optable_F[0x55] = c8_Fx55;
+    optable_F[0x65] = c8_Fx65;
 }
 
 void
@@ -485,7 +537,7 @@ chip8_emulatecycle(chip8_t *c8)
     c8->core.PC += 2;
 
     /* execute opcode */
-    opcodes_main[(c8->core.opcode & 0xF000) >> 12](c8);
+    optable_main[(c8->core.opcode & 0xF000) >> 12](c8);
 
     /* update timers */
     if (c8->core.delay_timer > 0) {
@@ -519,8 +571,11 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    init_opcodes_E();
-    init_opcodes_F();
+    init_optable_main();
+    init_optable_0();
+    init_optable_8();
+    init_optable_E();
+    init_optable_F();
 
     chip8_t *c8 = NULL;
     uint8_t quit_flag = 0;
