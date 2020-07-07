@@ -1,4 +1,3 @@
-# -Werror
 CFLAGS = -Wall -Werror -Wextra -std=c99 -g3 -pedantic
 LIBS = -lSDL2
 #INCLUDE = -I/usr/include/
