@@ -8,6 +8,18 @@ typedef void (*c8_opcode_func)(chip8_t *);
 
 static void c8_00E0(chip8_t *);
 static void c8_00EE(chip8_t *);
+
+/*
+TODO
+static void c8_00Cx(chip8_t *);
+static void c8_00FB(chip8_t *);
+static void c8_00FC(chip8_t *);
+static void c8_00FD(chip8_t *);
+static void c8_00FE(chip8_t *);
+static void c8_00FF(chip8_t *);
+*/
+
+
 static void c8_1nnn(chip8_t *);
 static void c8_2nnn(chip8_t *);
 static void c8_3xkk(chip8_t *);
@@ -15,6 +27,7 @@ static void c8_4xkk(chip8_t *);
 static void c8_5xy0(chip8_t *);
 static void c8_6xkk(chip8_t *);
 static void c8_7xkk(chip8_t *);
+
 static void c8_8xy0(chip8_t *);
 static void c8_8xy1(chip8_t *);
 static void c8_8xy2(chip8_t *);
@@ -24,13 +37,16 @@ static void c8_8xy5(chip8_t *);
 static void c8_8xy6(chip8_t *);
 static void c8_8xy7(chip8_t *);
 static void c8_8xyE(chip8_t *);
+
 static void c8_9xy0(chip8_t *);
 static void c8_Annn(chip8_t *);
 static void c8_Bnnn(chip8_t *);
 static void c8_Cxkk(chip8_t *);
 static void c8_Dxyn(chip8_t *);
+
 static void c8_Ex9E(chip8_t *);
 static void c8_ExA1(chip8_t *);
+
 static void c8_Fx07(chip8_t *);
 static void c8_Fx0A(chip8_t *);
 static void c8_Fx15(chip8_t *);
@@ -40,6 +56,14 @@ static void c8_Fx29(chip8_t *);
 static void c8_Fx33(chip8_t *);
 static void c8_Fx55(chip8_t *);
 static void c8_Fx65(chip8_t *);
+
+/*
+TODO
+static void c8_Fx30(chip8_t *);
+static void c8_Fx75(chip8_t *);
+static void c8_Fx85(chip8_t *);
+*/
+
 static void c8_NULL(chip8_t *);
 static void c8_goto_optable_0(chip8_t *);
 static void c8_goto_optable_8(chip8_t *);
@@ -409,6 +433,11 @@ c8_NULL(chip8_t *c8)
 static void
 c8_goto_optable_0(chip8_t *c8)
 {
+    /* TODO implement SuperChip-8 instructions */
+    if ((c8->core.opcode & 0x00FF) == 0x00FF) {
+        fprintf(stderr, "SuperChip-8 instruction encountered! Aborting...\n");
+        exit(-1);
+    }
     optable_0[c8->core.opcode & 0x000F](c8);
 }
 
