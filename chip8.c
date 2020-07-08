@@ -11,14 +11,13 @@ static void c8_00EE(chip8_t *);
 
 /*
 TODO
-static void c8_00Cx(chip8_t *);
-static void c8_00FB(chip8_t *);
-static void c8_00FC(chip8_t *);
-static void c8_00FD(chip8_t *);
-static void c8_00FE(chip8_t *);
-static void c8_00FF(chip8_t *);
+static void c8_00Cx(chip8_t *); SCD nibble: scroll screen x lines down
+static void c8_00FB(chip8_t *); SCL: scroll screen 4 pix left
+static void c8_00FC(chip8_t *); SCR: scroll screen 4 pix right
+static void c8_00FD(chip8_t *); EXIT: terminate interpreter
+static void c8_00FE(chip8_t *); LOW: disable extended screen mode
+static void c8_00FF(chip8_t *); HIGH: enable extended screen mode
 */
-
 
 static void c8_1nnn(chip8_t *);
 static void c8_2nnn(chip8_t *);
@@ -59,9 +58,9 @@ static void c8_Fx65(chip8_t *);
 
 /*
 TODO
-static void c8_Fx30(chip8_t *);
-static void c8_Fx75(chip8_t *);
-static void c8_Fx85(chip8_t *);
+static void c8_Fx30(chip8_t *); LD HF, VX: Point I to 10 byte numeric sprite for value in VX
+static void c8_Fx75(chip8_t *); LD R, VX: Store V0 .. VX in RPL user flags. Only V0 .. V7 valid
+static void c8_Fx85(chip8_t *); LD VX, R: Read V0 .. VX from RPL user flags. Only V0 .. V7 valid
 */
 
 static void c8_NULL(chip8_t *);
