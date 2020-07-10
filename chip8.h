@@ -4,11 +4,13 @@
 #include <stdint.h>
 
 #define RAM_SIZE 0x1000
-#define MAX_GAME_SIZE (0x1000 - 0x200)
+#define PROGRAMM_START_OFFSET 0x200
+#define MAX_GAME_SIZE (RAM_SIZE - PROGRAMM_START_OFFSET)
 enum {
     C8_DISP_WIDTH = 64,
     C8_DISP_HEIGHT = 32
 };
+#define SCHIP_SCREEN 128 /* two uint64_t per one row, 64 rows total */
 
 typedef union {
     uint8_t RAM[RAM_SIZE];
@@ -20,13 +22,15 @@ typedef union {
         uint8_t keys[16];
         uint8_t font[16 * 5];   /* 16 sprites, 5 bytes per sprite */
         uint8_t draw_flag;      /* to avoid redundant drawing */
+        uint8_t exit_flag;
 
         uint16_t opcode;        /* current instruction */
         uint16_t PC;            /* program counter */
         uint16_t stack[16];
         uint16_t I;
 
-        uint64_t disp_mem[C8_DISP_HEIGHT];
+        /*uint64_t disp_mem[C8_DISP_HEIGHT];*/
+        uint64_t disp_mem[SCHIP_SCREEN];
     } core;
 
 } chip8_t;

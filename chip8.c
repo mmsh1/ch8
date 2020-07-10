@@ -1,5 +1,6 @@
 #include <stdlib.h>
-#include <string.h> /* memcpy */
+#include <stdio.h> /* fclose, fopen, fread, frpintf */
+#include <string.h> /* memcpy, memset */
 
 #include "chip8.h"
 #include "sdl_layer.h"
@@ -8,16 +9,14 @@ typedef void (*c8_opcode_func)(chip8_t *);
 
 static void c8_00E0(chip8_t *);
 static void c8_00EE(chip8_t *);
-
-/*
-TODO
-static void c8_00Cx(chip8_t *); SCD nibble: scroll screen x lines down
-static void c8_00FB(chip8_t *); SCL: scroll screen 4 pix left
-static void c8_00FC(chip8_t *); SCR: scroll screen 4 pix right
-static void c8_00FD(chip8_t *); EXIT: terminate interpreter
-static void c8_00FE(chip8_t *); LOW: disable extended screen mode
-static void c8_00FF(chip8_t *); HIGH: enable extended screen mode
-*/
+/*TODO*/
+static void c8_00Cx(chip8_t *); /* SCD nibble: scroll screen x lines down */
+static void c8_00FB(chip8_t *); /* SCL: scroll screen 4 pix left */
+static void c8_00FC(chip8_t *); /* SCR: scroll screen 4 pix right */
+static void c8_00FD(chip8_t *); /* EXIT: terminate interpreter */
+static void c8_00FE(chip8_t *); /* LOW: disable extended screen mode */
+static void c8_00FF(chip8_t *); /* HIGH: enable extended screen mode */
+/* TODOend*/
 
 static void c8_1nnn(chip8_t *);
 static void c8_2nnn(chip8_t *);
@@ -56,12 +55,11 @@ static void c8_Fx33(chip8_t *);
 static void c8_Fx55(chip8_t *);
 static void c8_Fx65(chip8_t *);
 
-/*
-TODO
-static void c8_Fx30(chip8_t *); LD HF, VX: Point I to 10 byte numeric sprite for value in VX
-static void c8_Fx75(chip8_t *); LD R, VX: Store V0 .. VX in RPL user flags. Only V0 .. V7 valid
-static void c8_Fx85(chip8_t *); LD VX, R: Read V0 .. VX from RPL user flags. Only V0 .. V7 valid
-*/
+/*TODO*/
+static void c8_Fx30(chip8_t *); /* LD HF, VX: Point I to 10 byte numeric sprite for value in VX */
+static void c8_Fx75(chip8_t *); /* LD R, VX: Store V0 .. VX in RPL user flags. Only V0 .. V7 valid */
+static void c8_Fx85(chip8_t *); /* LD VX, R: Read V0 .. VX from RPL user flags. Only V0 .. V7 valid */
+/* TODOend*/
 
 static void c8_NULL(chip8_t *);
 static void c8_goto_optable_0(chip8_t *);
@@ -120,6 +118,45 @@ c8_00EE(chip8_t *c8)
     c8->core.PC = c8->core.stack[c8->core.SP];
     c8->core.SP -= 1;
 }
+
+/*TODO*/
+static void
+c8_00Cx(chip8_t *c8)
+{
+    /* SCD nibble: scroll screen x lines down */
+}
+
+static void
+c8_00FB(chip8_t *c8)
+{
+    /* SCL: scroll screen 4 pix left */
+}
+
+static void
+c8_00FC(chip8_t *c8)
+{
+    /* SCR: scroll screen 4 pix right */
+}
+
+static void
+c8_00FD(chip8_t *c8)
+{
+    /* EXIT: terminate interpreter */
+    exit(-1); /* TODO add termination exit code */
+}
+
+static void
+c8_00FE(chip8_t *c8)
+{
+    /* LOW: disable extended screen mode */
+}
+
+static void
+c8_00FF(chip8_t *c8)
+{
+    /* HIGH: enable extended screen mode */
+}
+/* TODOend */
 
 static void
 c8_1nnn(chip8_t *c8)
@@ -434,8 +471,13 @@ c8_goto_optable_0(chip8_t *c8)
 {
     /* TODO implement SuperChip-8 instructions */
     if ((c8->core.opcode & 0x00FF) == 0x00FF) {
-        fprintf(stderr, "SuperChip-8 instruction encountered! Aborting...\n");
+        fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Aborting...\n");
         exit(-1);
+    }
+    if ((c8->core.opcode & 0x00F0) == 0x00C0) {
+        fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Aborting...\n");
+        exit(-1);
+        /*optable_0[ _index_to_00Cx_ ](c8); */
     }
     optable_0[c8->core.opcode & 0x000F](c8);
 }
@@ -550,8 +592,9 @@ void
 chip8_init(chip8_t *c8)
 {
     memset(c8, 0, sizeof(*c8));
-    c8->core.PC = 0x200;
+    c8->core.PC = PROGRAMM_START_OFFSET;
     memcpy(c8->core.font, sprites, 80);
+    c8->core.exit_flag = 0;
 }
 
 void
@@ -606,7 +649,7 @@ main(int argc, char **argv)
     init_optable_F();
 
     chip8_t *c8 = NULL;
-    uint8_t quit_flag = 0;
+    /*uint8_t quit_flag = 0;*/
 
     c8 = malloc(sizeof(*c8));
     if (c8 == NULL) {
@@ -625,14 +668,17 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    while (!quit_flag) {
-        sdl_handle_keystroke(c8->core.keys, &quit_flag);
+    while (!c8->core.exit_flag) {
+        sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
         chip8_emulatecycle(c8);
         if (c8->core.draw_flag) {
-            uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];
+
+            /*uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];*/
+            uint32_t output[128 * 64];
             sdl_layer_draw(c8->core.disp_mem,
                            output,
-                           C8_DISP_WIDTH * C8_DISP_HEIGHT);
+                           /*C8_DISP_WIDTH * C8_DISP_HEIGHT);*/
+                           128 * 64);
             c8->core.draw_flag = 0;
         }
         SDL_Delay(1);
