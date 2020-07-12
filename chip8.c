@@ -13,10 +13,10 @@ static void c8_00EE(chip8_t *);
 static void c8_00Cx(chip8_t *); /* SCD nibble: scroll screen x lines down */
 static void c8_00FB(chip8_t *); /* SCL: scroll screen 4 pix left */
 static void c8_00FC(chip8_t *); /* SCR: scroll screen 4 pix right */
+/* TODOend*/
 static void c8_00FD(chip8_t *); /* EXIT: terminate interpreter */
 static void c8_00FE(chip8_t *); /* LOW: disable extended screen mode */
 static void c8_00FF(chip8_t *); /* HIGH: enable extended screen mode */
-/* TODOend*/
 
 static void c8_1nnn(chip8_t *);
 static void c8_2nnn(chip8_t *);
@@ -74,10 +74,13 @@ static void init_optable_E();
 static void init_optable_F();
 
 c8_opcode_func optable_main[0xF + 1];
-c8_opcode_func optable_0[0xE + 1];
+
+/*c8_opcode_func optable_0[0xE + 1];*/
+c8_opcode_func optable_0[0xFF + 1];
 c8_opcode_func optable_8[0xE + 1];
 c8_opcode_func optable_E[0xA1 + 1];
-c8_opcode_func optable_F[0x65 + 1];
+/* c8_opcode_func optable_F[0x65 + 1];*/
+c8_opcode_func optable_F[0x85 + 1];
 
 
 uint8_t sprites[80] = {
@@ -97,6 +100,9 @@ uint8_t sprites[80] = {
     0xE0, 0x90, 0x90, 0x90, 0xE0,   /* D */
     0xF0, 0x80, 0xF0, 0x80, 0xF0,   /* E */
     0xF0, 0x80, 0xF0, 0x80, 0x80    /* F */
+};
+
+uint8_t schip_sprites[] = {
 };
 
 static uint64_t
@@ -137,26 +143,28 @@ c8_00FC(chip8_t *c8)
 {
     /* SCR: scroll screen 4 pix right */
 }
+/* TODOend */
 
 static void
 c8_00FD(chip8_t *c8)
 {
     /* EXIT: terminate interpreter */
-    exit(-1); /* TODO add termination exit code */
+    c8->core.exit_flag = 1;
 }
 
 static void
 c8_00FE(chip8_t *c8)
 {
     /* LOW: disable extended screen mode */
+    c8->core.extended_flag = 0;
 }
 
 static void
 c8_00FF(chip8_t *c8)
 {
     /* HIGH: enable extended screen mode */
+    c8->core.extended_flag = 1;
 }
-/* TODOend */
 
 static void
 c8_1nnn(chip8_t *c8)
@@ -339,19 +347,24 @@ c8_Dxyn(chip8_t *c8)
     uint8_t height = (c8->core.opcode & 0x000F);
 
     uint8_t ypos = c8->core.V[y];
-    uint8_t xpos = c8->core.V[x] + 8;
+    uint8_t xpos = c8->core.V[x] + 16;
     uint64_t flag = 0;
 
     c8->core.V[0xF] = 0;
 
-    for (int row = 0; row < height; row++) {
-        uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 32]);
-        uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
-        flag |= *disp_row & sprite_row;
-        *disp_row ^= sprite_row;
+    /* SCHIP and CHIP-8 mode depends of extended_flag */
+    if (c8->core.extended_flag) {
+        /* extended mode drawing */
+    } else {
+        for (int row = 0; row < height; row++) {
+            uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 128]);
+            uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
+            flag |= *disp_row & sprite_row;
+            *disp_row ^= sprite_row;
 
-        if (flag) {
-            c8->core.V[0xF] = 1;
+            if (flag) {
+                c8->core.V[0xF] = 1;
+            }
         }
     }
     c8->core.draw_flag = 1;
@@ -524,21 +537,21 @@ init_optable_main()
 static void
 init_optable_0()
 {
+    for (int i = 0; i < 0xFF; i++) {
+        optable_0[i] = c8_NULL;
+    }
     optable_0[0x0] = c8_00E0;
-    optable_0[0x1] = c8_NULL;
-    optable_0[0x2] = c8_NULL;
-    optable_0[0x3] = c8_NULL;
-    optable_0[0x4] = c8_NULL;
-    optable_0[0x5] = c8_NULL;
-    optable_0[0x6] = c8_NULL;
-    optable_0[0x7] = c8_NULL;
-    optable_0[0x8] = c8_NULL;
-    optable_0[0x9] = c8_NULL;
-    optable_0[0xA] = c8_NULL;
-    optable_0[0xB] = c8_NULL;
-    optable_0[0xC] = c8_NULL;
-    optable_0[0xD] = c8_NULL;
     optable_0[0xE] = c8_00EE;
+
+    for (int i = 0xC0; i <= 0xCF; i++) {
+        optable_0[i] = c8_00Cx;
+    }
+
+    optable_0[0xFB] = c8_00FB;
+    optable_0[0xFC] = c8_00FC;
+    optable_0[0xFD] = c8_00FD;
+    optable_0[0xFE] = c8_00FE;
+    optable_0[0xFF] = c8_00FF;
 }
 
 static void
@@ -583,18 +596,25 @@ init_optable_F()
     optable_F[0x18] = c8_Fx18;
     optable_F[0x1E] = c8_Fx1E;
     optable_F[0x29] = c8_Fx29;
+
+    //optable_F[0x30] = c8_Fx30;
+
     optable_F[0x33] = c8_Fx33;
     optable_F[0x55] = c8_Fx55;
     optable_F[0x65] = c8_Fx65;
+
+    //optable_F[0x75] = c8_Fx75;
+    //optable_F[0x85] = c8_Fx85;
 }
 
 void
 chip8_init(chip8_t *c8)
 {
     memset(c8, 0, sizeof(*c8));
-    c8->core.PC = PROGRAMM_START_OFFSET;
     memcpy(c8->core.font, sprites, 80);
+    c8->core.PC = PROGRAMM_START_OFFSET;
     c8->core.exit_flag = 0;
+    c8->core.extended_flag = 0;
 }
 
 void
@@ -649,7 +669,6 @@ main(int argc, char **argv)
     init_optable_F();
 
     chip8_t *c8 = NULL;
-    /*uint8_t quit_flag = 0;*/
 
     c8 = malloc(sizeof(*c8));
     if (c8 == NULL) {

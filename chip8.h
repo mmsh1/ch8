@@ -21,7 +21,9 @@ typedef union {
         uint8_t SP;             /* stack pointer */
         uint8_t keys[16];
         uint8_t font[16 * 5];   /* 16 sprites, 5 bytes per sprite */
+        /* TODO SCHIP sprites? */
         uint8_t draw_flag;      /* to avoid redundant drawing */
+        uint8_t extended_flag;  /* SCHIP mode */
         uint8_t exit_flag;
 
         uint16_t opcode;        /* current instruction */
