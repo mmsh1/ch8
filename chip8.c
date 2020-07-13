@@ -519,8 +519,7 @@ c8_goto_optable_0(chip8_t *c8)
 {
     /* TODO implement SuperChip-8 instructions */
     if ((c8->core.opcode & 0x00FF) == 0x00FF) {
-        fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Aborting...\n");
-        exit(-1);
+        optable_0[0xFF](c8);
     }
     if ((c8->core.opcode & 0x00F0) == 0x00C0) {
         fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Aborting...\n");
