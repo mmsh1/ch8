@@ -8,7 +8,10 @@
 #define MAX_GAME_SIZE (RAM_SIZE - PROGRAMM_START_OFFSET)
 enum {
     C8_DISP_WIDTH = 64,
-    C8_DISP_HEIGHT = 32
+    C8_DISP_HEIGHT = 32,
+
+    SC8_DISP_WIDTH = 128,
+    SC8_DISP_HEIGHT = 64
 };
 #define SCHIP_SCREEN 128 /* two uint64_t per one row, 64 rows total */
 
@@ -22,6 +25,7 @@ typedef union {
         uint8_t keys[16];
         uint8_t font[16 * 5];   /* 16 sprites, 5 bytes per sprite */
         /* TODO SCHIP sprites? */
+
         uint8_t draw_flag;      /* to avoid redundant drawing */
         uint8_t extended_flag;  /* SCHIP mode */
         uint8_t exit_flag;
