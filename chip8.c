@@ -374,21 +374,29 @@ c8_Dxyn(chip8_t *c8)
     uint8_t height = (c8->core.opcode & 0x000F);
 
     uint8_t ypos = c8->core.V[y];
-    uint8_t xpos = c8->core.V[x] + 16;
+    uint8_t xpos = c8->core.V[x] + 8;
     uint64_t flag = 0;
 
     c8->core.V[0xF] = 0;
 
+    uint8_t actual_width = 1;
+    if (c8->core.extended_flag) {
+        actual_width = 2;
+    }
+
     if (height != 0) {
         for (int row = 0; row < height; row++) {
-            uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 64]);
-            uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
+            for (int half = 0; half < actual_width; half++) {
 
-            flag |= *disp_row & sprite_row;
-            *disp_row ^= sprite_row;
+                uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 64 + half]);
+                uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
 
-            if (flag) {
-                c8->core.V[0xF] = 1;
+                flag |= *disp_row & sprite_row;
+                *disp_row ^= sprite_row;
+
+                if (flag) {
+                    c8->core.V[0xF] = 1;
+                }
             }
         }
     } else {
