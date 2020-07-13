@@ -6,6 +6,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 * Requirements
   * SDL2 library <https://www.libsdl.org/>
   * GCC, Clang or TCC compiler
+  * make
 * type `make`
 
 ## TODO
