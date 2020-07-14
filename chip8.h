@@ -18,20 +18,21 @@ enum {
 typedef union {
     uint8_t RAM[RAM_SIZE];
     struct internals {
-        uint8_t V[16];          /* V[F] reserved for carry flag */
+        uint8_t V[16];           /* V[F] reserved for carry flag */
         uint8_t delay_timer;
         uint8_t sound_timer;
-        uint8_t SP;             /* stack pointer */
+        uint8_t SP;              /* stack pointer */
         uint8_t keys[16];
-        uint8_t font[16 * 5];   /* 16 sprites, 5 bytes per sprite */
-        /* TODO SCHIP sprites? */
+        uint8_t font[16 * 5];    /* 16 sprites, 5 bytes per sprite */
+        uint8_t s_font[16 * 10]; /* 16 sprites, 10 bytes per sprite */
 
-        uint8_t draw_flag;      /* to avoid redundant drawing */
-        uint8_t extended_flag;  /* SCHIP mode */
+        uint8_t draw_flag;       /* to avoid redundant drawing */
+        uint8_t extended_flag;   /* SCHIP mode */
         uint8_t exit_flag;
+        uint8_t rpl_flags[8];
 
-        uint16_t opcode;        /* current instruction */
-        uint16_t PC;            /* program counter */
+        uint16_t opcode;         /* current instruction */
+        uint16_t PC;             /* program counter */
         uint16_t stack[16];
         uint16_t I;
 

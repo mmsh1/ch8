@@ -65,12 +65,9 @@ static void c8_Fx29(chip8_t *);
 static void c8_Fx33(chip8_t *);
 static void c8_Fx55(chip8_t *);
 static void c8_Fx65(chip8_t *);
-
-/*TODO*/
-static void c8_Fx30(chip8_t *); /* LD HF, VX: Point I to 10 byte numeric sprite for value in VX */
-static void c8_Fx75(chip8_t *); /* LD R, VX: Store V0 .. VX in RPL user flags. Only V0 .. V7 valid */
-static void c8_Fx85(chip8_t *); /* LD VX, R: Read V0 .. VX from RPL user flags. Only V0 .. V7 valid */
-/* TODOend*/
+static void c8_Fx30(chip8_t *);
+static void c8_Fx75(chip8_t *);
+static void c8_Fx85(chip8_t *);
 
 static void c8_NULL(chip8_t *);
 static void c8_goto_optable_0(chip8_t *);
@@ -113,7 +110,7 @@ uint8_t sprites[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80    /* F */
 };
 
-uint8_t schip_sprites[] = {
+uint8_t s_sprites[] = {
     0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF,   /* 0 */
     0x18, 0x78, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0xFF, 0xFF,   /* 1 */
     0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF,   /* 2 */
@@ -156,19 +153,27 @@ c8_00EE(chip8_t *c8)
 static void
 c8_00Cx(chip8_t *c8)
 {
-    /* SCD nibble: scroll screen x lines down */
+    uint8_t x = c8->core.opcode & 0x000F;
+    uint8_t actual_height = 32;
+    if (c8->core.extended_flag) {
+        actual_height = 64;
+    }
+    for (int i = 0; i < x; i++) {
+        /*TODO*/
+    }
+    c8->core.draw_flag = 1;
 }
 
 static void
 c8_00FB(chip8_t *c8)
 {
-    /* SCL: scroll screen 4 pix left */
+    c8->core.draw_flag = 1;
 }
 
 static void
 c8_00FC(chip8_t *c8)
 {
-    /* SCR: scroll screen 4 pix right */
+    c8->core.draw_flag = 1;
 }
 /* TODOend */
 
@@ -387,7 +392,6 @@ c8_Dxyn(chip8_t *c8)
     if (height != 0) {
         for (int row = 0; row < height; row++) {
             for (int half = 0; half < actual_width; half++) {
-
                 uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 64 + half]);
                 uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
 
@@ -401,6 +405,7 @@ c8_Dxyn(chip8_t *c8)
         }
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
+
     }
     c8->core.draw_flag = 1;
 }
@@ -480,6 +485,14 @@ c8_Fx29(chip8_t *c8)
 }
 
 static void
+c8_Fx30(chip8_t *c8) {
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t digit = c8->core.V[x];
+    uint16_t s_fontset_address = &(c8->core.s_font[0]) - c8->RAM;
+    c8->core.I = s_fontset_address + digit * 10;
+}
+
+static void
 c8_Fx33(chip8_t *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
@@ -508,10 +521,38 @@ c8_Fx65(chip8_t *c8)
 }
 
 static void
+c8_Fx75(chip8_t *c8)
+{
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    if (x > 7) {
+        fprintf(stderr, "ERROR: wrong x value(%d) in c8_Fx75!\n", x);
+        c8->core.exit_flag = 1;
+        return;
+    }
+    for (uint8_t i = 0; i <= x; i++) {
+        c8->core.rpl_flags[i] = c8->core.V[i];
+    }
+}
+
+static void
+c8_Fx85(chip8_t *c8)
+{
+    uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    if (x > 7) {
+        fprintf(stderr, "ERROR: wrong x value(%d) in c8_Fx75!\n", x);
+        c8->core.exit_flag = 1;
+        return;
+    }
+    for (uint8_t i = 0; i <= x; i++) {
+        c8->core.V[i] = c8->core.rpl_flags[i];
+    }
+}
+
+static void
 c8_NULL(chip8_t *c8)
 {
     fprintf(stderr, "calling c8_NULL\n");
-    fprintf(stderr, "opcode: %x\n", c8->core.opcode & 0xFFFF);
+    fprintf(stderr, "opcode: %04X\n", c8->core.opcode & 0xFFFF);
 }
 
 static void
@@ -519,6 +560,7 @@ c8_goto_optable_0(chip8_t *c8)
 {
     /* TODO implement SuperChip-8 instructions */
     if ((c8->core.opcode & 0x00FF) == 0x00FF) {
+        fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Proceeding...\n");
         optable_0[0xFF](c8);
     }
     if ((c8->core.opcode & 0x00F0) == 0x00C0) {
@@ -630,15 +672,12 @@ init_optable_F()
     optable_F[0x18] = c8_Fx18;
     optable_F[0x1E] = c8_Fx1E;
     optable_F[0x29] = c8_Fx29;
-
-    //optable_F[0x30] = c8_Fx30;
-
+    optable_F[0x30] = c8_Fx30;
     optable_F[0x33] = c8_Fx33;
     optable_F[0x55] = c8_Fx55;
     optable_F[0x65] = c8_Fx65;
-
-    //optable_F[0x75] = c8_Fx75;
-    //optable_F[0x85] = c8_Fx85;
+    optable_F[0x75] = c8_Fx75;
+    optable_F[0x85] = c8_Fx85;
 }
 
 void
@@ -646,6 +685,7 @@ chip8_init(chip8_t *c8)
 {
     memset(c8, 0, sizeof(*c8));
     memcpy(c8->core.font, sprites, 80);
+    memcpy(c8->core.s_font, s_sprites, 160);
     c8->core.PC = PROGRAMM_START_OFFSET;
     c8->core.exit_flag = 0;
     c8->core.extended_flag = 0;
@@ -682,7 +722,7 @@ chip8_loadgame(chip8_t *c8, const char *game_name)
         fprintf(stderr, "Error: failed to open game: %s.\n", game_name);
         return -1;
     }
-    fread(&(c8->RAM[0x200]), 1, MAX_GAME_SIZE, game);
+    fread(&(c8->RAM[PROGRAMM_START_OFFSET]), 1, MAX_GAME_SIZE, game);
     fclose(game);
     return 0;
 }
