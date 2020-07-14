@@ -34,3 +34,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 [5] Some useful information about SuperChip
 
 https://courses.ece.cornell.edu/ece5990/ECE5725_Fall2016_Projects/Lab_group_bcp39_rk534/cpu.html
+
+[6] Useful information about all possible quirks
+
+https://github.com/Chromatophore/HP48-Superchip
