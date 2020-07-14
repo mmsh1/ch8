@@ -82,7 +82,6 @@ static void init_optable_E();
 static void init_optable_F();
 
 c8_opcode_func optable_main[0xF + 1];
-
 c8_opcode_func optable_0[0xFF + 1];
 c8_opcode_func optable_8[0x0E + 1];
 c8_opcode_func optable_E[0xA1 + 1];
@@ -130,7 +129,7 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
 static void
 c8_00E0(chip8_t *c8)
 {
-    memset(c8->core.disp_mem, 0, sizeof(uint64_t) * C8_DISP_HEIGHT);
+    memset(c8->core.disp_mem, 0, sizeof(uint64_t) * 128); /* TODO replace with macro */
     c8->core.draw_flag = 1;
 }
 
@@ -373,9 +372,15 @@ c8_Dxyn(chip8_t *c8)
 
     c8->core.V[0xF] = 0;
 
+    uint8_t actual_width = 1;
+    if (c8->core.extended_flag) {
+        actual_width = 2;
+    }
+
     if (height != 0) {
         for (int row = 0; row < height; row++) {
-                uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 64]);
+            for (int half = 0; half < actual_width; half++) {
+                uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 64 + half]);
                 uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
                 flag |= *disp_row & sprite_row;
                 *disp_row ^= sprite_row;
@@ -383,6 +388,7 @@ c8_Dxyn(chip8_t *c8)
                 if (flag) {
                     c8->core.V[0xF] = 1;
                 }
+            }
         }
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
@@ -539,15 +545,17 @@ c8_NULL(chip8_t *c8)
 static void
 c8_goto_optable_0(chip8_t *c8)
 {
+
     /* TODO implement SuperChip-8 instructions */
-    if ((c8->core.opcode & 0x00FF) == 0x00FF) {
+    /*if ((c8->core.opcode & 0x00FF) == 0x00FF) {
         fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Proceeding...\n");
     }
     if ((c8->core.opcode & 0x00F0) == 0x00C0) {
         fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Aborting...\n");
         exit(-1);
-    }
-    optable_0[c8->core.opcode & 0x00FF](c8);
+    }*/
+    fprintf(stderr, "current opcode: %04X\n", c8->core.opcode & 0xFFFF);
+    optable_0[(c8->core.opcode) & 0x00FF](c8);
 }
 
 static void
@@ -598,8 +606,8 @@ init_optable_0()
     for (int i = 0xC0; i <= 0xCF; i++) {
         optable_0[i] = c8_00Cx;
     }
-    optable_0[0x00] = c8_00E0;
-    optable_0[0x0E] = c8_00EE;
+    optable_0[0xE0] = c8_00E0;
+    optable_0[0xEE] = c8_00EE;
     optable_0[0xFB] = c8_00FB;
     optable_0[0xFC] = c8_00FC;
     optable_0[0xFD] = c8_00FD;
