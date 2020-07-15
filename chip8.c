@@ -97,7 +97,7 @@ static c8_opcode_func optable_F[0x85 + 1];
 
 uint64_t disp_mem[2 * SC8_DISP_HEIGHT]; /* 2 uint64 per row */
 
-static uint8_t sprites[80] = {
+static uint8_t lres_sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
     0x20, 0x60, 0x20, 0x20, 0x70,   /* 1 */
     0xF0, 0x10, 0xF0, 0x80, 0xF0,   /* 2 */
@@ -116,7 +116,7 @@ static uint8_t sprites[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80    /* F */
 };
 
-static uint8_t s_sprites[100] = {
+static uint8_t hres_sprites[100] = {
     0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF,   /* 0 */
     0x18, 0x78, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0xFF, 0xFF,   /* 1 */
     0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF,   /* 2 */
@@ -687,8 +687,8 @@ void
 chip8_init(chip8 *c8)
 {
     memset(c8, 0, sizeof(*c8));
-    memcpy(c8->core.lres_font, sprites, 80);
-    memcpy(c8->core.hres_font, s_sprites, 100);
+    memcpy(c8->core.lres_font, lres_sprites, 80);
+    memcpy(c8->core.hres_font, hres_sprites, 100);
     c8->core.PC = PROGRAMM_START_OFFSET;
     c8->core.exit_flag = 0;
     c8->core.extended_flag = 0;
