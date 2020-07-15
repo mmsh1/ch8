@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h> /* fclose, fopen, fread, frpintf */
+#include <stdio.h> /* fclose, fopen, fread, fprintf */
 #include <string.h> /* memcpy, memset */
 
 #include "chip8.h"
@@ -16,64 +16,72 @@
   (byte & 0x02 ? '1' : '0'), \
   (byte & 0x01 ? '1' : '0')
 
-typedef void (*c8_opcode_func)(chip8_t *);
+enum {
+    C8_DISP_WIDTH = 64,
+    C8_DISP_HEIGHT = 32,
 
-static void c8_00E0(chip8_t *);
-static void c8_00EE(chip8_t *);
+    SC8_DISP_WIDTH = 128,
+    SC8_DISP_HEIGHT = 64
+};
+
+typedef void (*c8_opcode_func)(chip8 *);
+
+static void c8_00E0(chip8 *);
+static void c8_00EE(chip8 *);
 /*TODO*/
-static void c8_00Cx(chip8_t *); /* SCD nibble: scroll screen x lines down */
-static void c8_00FB(chip8_t *); /* SCL: scroll screen 4 pix left */
-static void c8_00FC(chip8_t *); /* SCR: scroll screen 4 pix right */
+static void c8_00Cx(chip8 *); /* SCD nibble: scroll screen x lines down */
+static void c8_00FB(chip8 *); /* SCL: scroll screen 4 pix left */
+static void c8_00FC(chip8 *); /* SCR: scroll screen 4 pix right */
 /* TODOend*/
-static void c8_00FD(chip8_t *);
-static void c8_00FE(chip8_t *);
-static void c8_00FF(chip8_t *);
+static void c8_00FD(chip8 *);
+static void c8_00FE(chip8 *);
+static void c8_00FF(chip8 *);
 
-static void c8_1nnn(chip8_t *);
-static void c8_2nnn(chip8_t *);
-static void c8_3xkk(chip8_t *);
-static void c8_4xkk(chip8_t *);
-static void c8_5xy0(chip8_t *);
-static void c8_6xkk(chip8_t *);
-static void c8_7xkk(chip8_t *);
+static void c8_1nnn(chip8 *);
+static void c8_2nnn(chip8 *);
+static void c8_3xkk(chip8 *);
+static void c8_4xkk(chip8 *);
+static void c8_5xy0(chip8 *);
+static void c8_6xkk(chip8 *);
+static void c8_7xkk(chip8 *);
 
-static void c8_8xy0(chip8_t *);
-static void c8_8xy1(chip8_t *);
-static void c8_8xy2(chip8_t *);
-static void c8_8xy3(chip8_t *);
-static void c8_8xy4(chip8_t *);
-static void c8_8xy5(chip8_t *);
-static void c8_8xy6(chip8_t *);
-static void c8_8xy7(chip8_t *);
-static void c8_8xyE(chip8_t *);
+static void c8_8xy0(chip8 *);
+static void c8_8xy1(chip8 *);
+static void c8_8xy2(chip8 *);
+static void c8_8xy3(chip8 *);
+static void c8_8xy4(chip8 *);
+static void c8_8xy5(chip8 *);
+static void c8_8xy6(chip8 *);
+static void c8_8xy7(chip8 *);
+static void c8_8xyE(chip8 *);
 
-static void c8_9xy0(chip8_t *);
-static void c8_Annn(chip8_t *);
-static void c8_Bnnn(chip8_t *);
-static void c8_Cxkk(chip8_t *);
-static void c8_Dxyn(chip8_t *);
+static void c8_9xy0(chip8 *);
+static void c8_Annn(chip8 *);
+static void c8_Bnnn(chip8 *);
+static void c8_Cxkk(chip8 *);
+static void c8_Dxyn(chip8 *);
 
-static void c8_Ex9E(chip8_t *);
-static void c8_ExA1(chip8_t *);
+static void c8_Ex9E(chip8 *);
+static void c8_ExA1(chip8 *);
 
-static void c8_Fx07(chip8_t *);
-static void c8_Fx0A(chip8_t *);
-static void c8_Fx15(chip8_t *);
-static void c8_Fx18(chip8_t *);
-static void c8_Fx1E(chip8_t *);
-static void c8_Fx29(chip8_t *);
-static void c8_Fx33(chip8_t *);
-static void c8_Fx55(chip8_t *);
-static void c8_Fx65(chip8_t *);
-static void c8_Fx30(chip8_t *);
-static void c8_Fx75(chip8_t *);
-static void c8_Fx85(chip8_t *);
+static void c8_Fx07(chip8 *);
+static void c8_Fx0A(chip8 *);
+static void c8_Fx15(chip8 *);
+static void c8_Fx18(chip8 *);
+static void c8_Fx1E(chip8 *);
+static void c8_Fx29(chip8 *);
+static void c8_Fx33(chip8 *);
+static void c8_Fx55(chip8 *);
+static void c8_Fx65(chip8 *);
+static void c8_Fx30(chip8 *);
+static void c8_Fx75(chip8 *);
+static void c8_Fx85(chip8 *);
 
-static void c8_NULL(chip8_t *);
-static void c8_goto_optable_0(chip8_t *);
-static void c8_goto_optable_8(chip8_t *);
-static void c8_goto_optable_E(chip8_t *);
-static void c8_goto_optable_F(chip8_t *);
+static void c8_NULL(chip8 *);
+static void c8_goto_optable_0(chip8 *);
+static void c8_goto_optable_8(chip8 *);
+static void c8_goto_optable_E(chip8 *);
+static void c8_goto_optable_F(chip8 *);
 
 static void init_optable_main();
 static void init_optable_0();
@@ -81,14 +89,15 @@ static void init_optable_8();
 static void init_optable_E();
 static void init_optable_F();
 
-c8_opcode_func optable_main[0xF + 1];
-c8_opcode_func optable_0[0xFF + 1];
-c8_opcode_func optable_8[0x0E + 1];
-c8_opcode_func optable_E[0xA1 + 1];
-c8_opcode_func optable_F[0x85 + 1];
+static c8_opcode_func optable_main[0xF + 1];
+static c8_opcode_func optable_0[0xFF + 1];
+static c8_opcode_func optable_8[0x0E + 1];
+static c8_opcode_func optable_E[0xA1 + 1];
+static c8_opcode_func optable_F[0x85 + 1];
 
+uint64_t disp_mem[2 * SC8_DISP_HEIGHT]; /* 2 uint64 per row */
 
-uint8_t sprites[80] = {
+static uint8_t sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
     0x20, 0x60, 0x20, 0x20, 0x70,   /* 1 */
     0xF0, 0x10, 0xF0, 0x80, 0xF0,   /* 2 */
@@ -107,7 +116,7 @@ uint8_t sprites[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80    /* F */
 };
 
-uint8_t s_sprites[100] = {
+static uint8_t s_sprites[100] = {
     0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF,   /* 0 */
     0x18, 0x78, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0xFF, 0xFF,   /* 1 */
     0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF,   /* 2 */
@@ -127,14 +136,23 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
 }
 
 static void
-c8_00E0(chip8_t *c8)
+_render_output(uint64_t *disp_mem, uint32_t *output, uint16_t size)
 {
-    memset(c8->core.disp_mem, 0, sizeof(uint64_t) * 128); /* TODO replace with macro */
+    for(int i = 0; i < size; i++) {
+        output[i] = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
+    }
+    /* TODO rewrite for readability */
+}
+
+static void
+c8_00E0(chip8 *c8)
+{
+    memset(disp_mem, 0, sizeof(uint64_t)* 2 * SC8_DISP_HEIGHT); /* TODO rewrite */
     c8->core.draw_flag = 1;
 }
 
 static void
-c8_00EE(chip8_t *c8)
+c8_00EE(chip8 *c8)
 {
     c8->core.PC = c8->core.stack[c8->core.SP];
     c8->core.SP -= 1;
@@ -142,7 +160,7 @@ c8_00EE(chip8_t *c8)
 
 /*TODO*/
 static void
-c8_00Cx(chip8_t *c8)
+c8_00Cx(chip8 *c8)
 {
     uint8_t x = c8->core.opcode & 0x000F;
     uint8_t actual_height = 32;
@@ -156,44 +174,44 @@ c8_00Cx(chip8_t *c8)
 }
 
 static void
-c8_00FB(chip8_t *c8)
+c8_00FB(chip8 *c8)
 {
     c8->core.draw_flag = 1;
 }
 
 static void
-c8_00FC(chip8_t *c8)
+c8_00FC(chip8 *c8)
 {
     c8->core.draw_flag = 1;
 }
 /* TODOend */
 
 static void
-c8_00FD(chip8_t *c8)
+c8_00FD(chip8 *c8)
 {
     c8->core.exit_flag = 1;
 }
 
 static void
-c8_00FE(chip8_t *c8)
+c8_00FE(chip8 *c8)
 {
     c8->core.extended_flag = 0;
 }
 
 static void
-c8_00FF(chip8_t *c8)
+c8_00FF(chip8 *c8)
 {
     c8->core.extended_flag = 1;
 }
 
 static void
-c8_1nnn(chip8_t *c8)
+c8_1nnn(chip8 *c8)
 {
     c8->core.PC = c8->core.opcode & 0x0FFF;
 }
 
 static void
-c8_2nnn(chip8_t *c8)
+c8_2nnn(chip8 *c8)
 {
     c8->core.SP += 1;
     c8->core.stack[c8->core.SP] = c8->core.PC;
@@ -201,7 +219,7 @@ c8_2nnn(chip8_t *c8)
 }
 
 static void
-c8_3xkk(chip8_t *c8)
+c8_3xkk(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     if (c8->core.V[x] == (c8->core.opcode & 0x00FF)) {
@@ -210,7 +228,7 @@ c8_3xkk(chip8_t *c8)
 }
 
 static void
-c8_4xkk(chip8_t *c8)
+c8_4xkk(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     if (c8->core.V[x] != (c8->core.opcode & 0x00FF)) {
@@ -219,7 +237,7 @@ c8_4xkk(chip8_t *c8)
 }
 
 static void
-c8_5xy0(chip8_t *c8)
+c8_5xy0(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -229,21 +247,21 @@ c8_5xy0(chip8_t *c8)
 }
 
 static void
-c8_6xkk(chip8_t *c8)
+c8_6xkk(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.V[x] = c8->core.opcode & 0x00FF;
 }
 
 static void
-c8_7xkk(chip8_t *c8)
+c8_7xkk(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.V[x] += c8->core.opcode & 0x00FF;
 }
 
 static void
-c8_8xy0(chip8_t *c8)
+c8_8xy0(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -251,7 +269,7 @@ c8_8xy0(chip8_t *c8)
 }
 
 static void
-c8_8xy1(chip8_t *c8)
+c8_8xy1(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -259,7 +277,7 @@ c8_8xy1(chip8_t *c8)
 }
 
 static void
-c8_8xy2(chip8_t *c8)
+c8_8xy2(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -267,7 +285,7 @@ c8_8xy2(chip8_t *c8)
 }
 
 static void
-c8_8xy3(chip8_t *c8)
+c8_8xy3(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -275,7 +293,7 @@ c8_8xy3(chip8_t *c8)
 }
 
 static void
-c8_8xy4(chip8_t *c8)
+c8_8xy4(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -289,7 +307,7 @@ c8_8xy4(chip8_t *c8)
 }
 
 static void
-c8_8xy5(chip8_t *c8)
+c8_8xy5(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -302,7 +320,7 @@ c8_8xy5(chip8_t *c8)
 }
 
 static void
-c8_8xy6(chip8_t *c8)
+c8_8xy6(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.V[0xF] = (c8->core.V[x] & 0x01);
@@ -310,7 +328,7 @@ c8_8xy6(chip8_t *c8)
 }
 
 static void
-c8_8xy7(chip8_t *c8)
+c8_8xy7(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -323,7 +341,7 @@ c8_8xy7(chip8_t *c8)
 }
 
 static void
-c8_8xyE(chip8_t *c8)
+c8_8xyE(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.V[0xF] = (c8->core.V[x] & 0x80) >> 7;
@@ -331,7 +349,7 @@ c8_8xyE(chip8_t *c8)
 }
 
 static void
-c8_9xy0(chip8_t *c8)
+c8_9xy0(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -341,26 +359,26 @@ c8_9xy0(chip8_t *c8)
 }
 
 static void
-c8_Annn(chip8_t *c8)
+c8_Annn(chip8 *c8)
 {
     c8->core.I = c8->core.opcode & 0x0FFF;
 }
 
 static void
-c8_Bnnn(chip8_t *c8)
+c8_Bnnn(chip8 *c8)
 {
     c8->core.PC = (c8->core.opcode & 0x0FFF) + c8->core.V[0];
 }
 
 static void
-c8_Cxkk(chip8_t *c8)
+c8_Cxkk(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.V[x] = (rand() % 256) & (c8->core.opcode & 0x00FF);
 }
 
 static void
-c8_Dxyn(chip8_t *c8)
+c8_Dxyn(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
@@ -380,7 +398,7 @@ c8_Dxyn(chip8_t *c8)
     if (height != 0) {
         for (int row = 0; row < height; row++) {
             for (int half = 0; half < actual_width; half++) {
-                uint64_t *disp_row = &(c8->core.disp_mem[(ypos + row) % 64 + half]);
+                uint64_t *disp_row = &(disp_mem[(ypos + row) % 64 + half]);
                 uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
                 flag |= *disp_row & sprite_row;
                 *disp_row ^= sprite_row;
@@ -398,7 +416,7 @@ c8_Dxyn(chip8_t *c8)
 }
 
 static void
-c8_Ex9E(chip8_t *c8)
+c8_Ex9E(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t keynum = c8->core.V[x];
@@ -408,7 +426,7 @@ c8_Ex9E(chip8_t *c8)
 }
 
 static void
-c8_ExA1(chip8_t *c8)
+c8_ExA1(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t keynum = c8->core.V[x];
@@ -418,14 +436,14 @@ c8_ExA1(chip8_t *c8)
 }
 
 static void
-c8_Fx07(chip8_t *c8)
+c8_Fx07(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.V[x] = c8->core.delay_timer;
 }
 
 static void
-c8_Fx0A(chip8_t *c8)
+c8_Fx0A(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t no_key_pressed = 1;
@@ -442,45 +460,45 @@ c8_Fx0A(chip8_t *c8)
 }
 
 static void
-c8_Fx15(chip8_t *c8)
+c8_Fx15(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.delay_timer = c8->core.V[x];
 }
 
 static void
-c8_Fx18(chip8_t *c8)
+c8_Fx18(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.sound_timer = c8->core.V[x];
 }
 
 static void
-c8_Fx1E(chip8_t *c8)
+c8_Fx1E(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     c8->core.I += c8->core.V[x];
 }
 
 static void
-c8_Fx29(chip8_t *c8)
+c8_Fx29(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t digit = c8->core.V[x];
-    uint16_t fontset_address = &(c8->core.font[0]) - c8->RAM;
+    uint16_t fontset_address = &(c8->core.lres_font[0]) - c8->RAM;
     c8->core.I = fontset_address + digit * 5;
 }
 
 static void
-c8_Fx30(chip8_t *c8) {
+c8_Fx30(chip8 *c8) {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t digit = c8->core.V[x];
-    uint16_t s_fontset_address = &(c8->core.s_font[0]) - c8->RAM;
+    uint16_t s_fontset_address = &(c8->core.hres_font[0]) - c8->RAM;
     c8->core.I = s_fontset_address + digit * 10;
 }
 
 static void
-c8_Fx33(chip8_t *c8)
+c8_Fx33(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t value = c8->core.V[x];
@@ -490,7 +508,7 @@ c8_Fx33(chip8_t *c8)
 }
 
 static void
-c8_Fx55(chip8_t *c8)
+c8_Fx55(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     for(uint8_t i = 0; i <= x; i++) {
@@ -499,7 +517,7 @@ c8_Fx55(chip8_t *c8)
 }
 
 static void
-c8_Fx65(chip8_t *c8)
+c8_Fx65(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     for (uint8_t i = 0; i <= x; i++) {
@@ -508,7 +526,7 @@ c8_Fx65(chip8_t *c8)
 }
 
 static void
-c8_Fx75(chip8_t *c8)
+c8_Fx75(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     if (x > 7) {
@@ -522,7 +540,7 @@ c8_Fx75(chip8_t *c8)
 }
 
 static void
-c8_Fx85(chip8_t *c8)
+c8_Fx85(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     if (x > 7) {
@@ -536,42 +554,42 @@ c8_Fx85(chip8_t *c8)
 }
 
 static void
-c8_NULL(chip8_t *c8)
+c8_NULL(chip8 *c8)
 {
     fprintf(stderr, "ERROR: calling c8_NULL\n");
     fprintf(stderr, "opcode: %04X\n", c8->core.opcode & 0xFFFF);
 }
 
 static void
-c8_goto_optable_0(chip8_t *c8)
+c8_goto_optable_0(chip8 *c8)
 {
 
     /* TODO implement SuperChip-8 instructions */
-    /*if ((c8->core.opcode & 0x00FF) == 0x00FF) {
+    if ((c8->core.opcode & 0x00FF) == 0x00FF) {
         fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Proceeding...\n");
     }
     if ((c8->core.opcode & 0x00F0) == 0x00C0) {
         fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Aborting...\n");
         exit(-1);
-    }*/
-    fprintf(stderr, "current opcode: %04X\n", c8->core.opcode & 0xFFFF);
+    }
+    /*fprintf(stderr, "current opcode: %04X\n", c8->core.opcode & 0xFFFF);*/
     optable_0[(c8->core.opcode) & 0x00FF](c8);
 }
 
 static void
-c8_goto_optable_8(chip8_t *c8)
+c8_goto_optable_8(chip8 *c8)
 {
     optable_8[(c8->core.opcode) & 0x000F](c8);
 }
 
 static void
-c8_goto_optable_E(chip8_t *c8)
+c8_goto_optable_E(chip8 *c8)
 {
     optable_E[c8->core.opcode & 0x00FF](c8);
 }
 
 static void
-c8_goto_optable_F(chip8_t *c8)
+c8_goto_optable_F(chip8 *c8)
 {
     optable_F[c8->core.opcode & 0x00FF](c8);
 }
@@ -666,18 +684,18 @@ init_optable_F()
 }
 
 void
-chip8_init(chip8_t *c8)
+chip8_init(chip8 *c8)
 {
     memset(c8, 0, sizeof(*c8));
-    memcpy(c8->core.font, sprites, 80);
-    memcpy(c8->core.s_font, s_sprites, 100);
+    memcpy(c8->core.lres_font, sprites, 80);
+    memcpy(c8->core.hres_font, s_sprites, 100);
     c8->core.PC = PROGRAMM_START_OFFSET;
     c8->core.exit_flag = 0;
     c8->core.extended_flag = 0;
 }
 
 void
-chip8_emulatecycle(chip8_t *c8)
+chip8_emulatecycle(chip8 *c8)
 {
     /* fetch opcode */
     c8->core.opcode =
@@ -699,7 +717,7 @@ chip8_emulatecycle(chip8_t *c8)
 }
 
 int
-chip8_loadgame(chip8_t *c8, const char *game_name)
+chip8_loadgame(chip8 *c8, const char *game_name)
 {
     FILE *game;
     game = fopen(game_name, "rb");
@@ -727,7 +745,7 @@ main(int argc, char **argv)
     init_optable_E();
     init_optable_F();
 
-    chip8_t *c8 = NULL;
+    chip8 *c8 = NULL;
 
     c8 = malloc(sizeof(*c8));
     if (c8 == NULL) {
@@ -750,13 +768,9 @@ main(int argc, char **argv)
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
         chip8_emulatecycle(c8);
         if (c8->core.draw_flag) {
-
-            /*uint32_t output[C8_DISP_WIDTH * C8_DISP_HEIGHT];*/
-            uint32_t output[128 * 64];
-            sdl_layer_draw(c8->core.disp_mem,
-                           output,
-                           /*C8_DISP_WIDTH * C8_DISP_HEIGHT);*/
-                           128 * 64);
+            uint32_t output[128 * 64]; /* TODO replace magic nums */
+            _render_output(disp_mem, output, 128 * 64);
+            sdl_layer_draw(output);
             c8->core.draw_flag = 0;
         }
         SDL_Delay(1);

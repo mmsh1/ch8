@@ -107,11 +107,8 @@ sdl_handle_keystroke(uint8_t *keys, uint8_t *quit_flag)
 }
 
 void
-sdl_layer_draw(uint64_t *disp_mem, uint32_t *output, uint16_t size)
+sdl_layer_draw(uint32_t *output)
 {
-    for(int i = 0; i < size; i++) {
-        output[i] = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
-    }
     SDL_UpdateTexture(texture, NULL, output, 4 * 64/*256*/);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
