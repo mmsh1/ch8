@@ -107,9 +107,9 @@ sdl_handle_keystroke(uint8_t *keys, uint8_t *quit_flag)
 }
 
 void
-sdl_layer_draw(uint32_t *output)
+sdl_layer_draw(uint32_t *output, uint8_t width)
 {
-    SDL_UpdateTexture(texture, NULL, output, 4 * 64/*256*/);
+    SDL_UpdateTexture(texture, NULL, output, sizeof(output[0]) * width);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);

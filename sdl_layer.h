@@ -7,11 +7,11 @@
 #include <SDL2/SDL.h>
 
 
-int sdl_layer_init(const char *wname, int width, int height, int scale);
+int sdl_layer_init(const char *, int, int, int);
 
-void sdl_handle_keystroke(uint8_t *keys, uint8_t *quit_flag);
+void sdl_handle_keystroke(uint8_t *, uint8_t *);
 
-void sdl_layer_draw(uint32_t *pix);
+void sdl_layer_draw(uint32_t *, uint8_t);
 
 void sdl_layer_destroy();
 

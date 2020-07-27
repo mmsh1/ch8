@@ -415,7 +415,8 @@ c8_Dxyn(chip8 *c8)
 
     if (height != 0) {
         for (int row = 0; row < height; row++) {
-            uint64_t *disp_row = &(disp_mem[((ypos + row) & mask_height) +
+            /* TODO non-readable! */
+            uint64_t *disp_row = &(disp_mem[(((ypos + row) & mask_height) * 2) +
                     (xpos > 63? 1 : 0)]);
             //uint64_t *disp_row = &(disp_mem[(ypos + row) % 64]);
             uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
@@ -782,23 +783,16 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    /*disp_mem[2] = 0xFFFFFFFFFFFFFFFF;
-    disp_mem[4] = 0xFFFFFFFFFFFFFFFF;
-    disp_mem[21] = 0xFFFFFFFFFFFFFFFF;
-
-    disp_mem[31] = 0xFF00FFFFFFFFFFFF;
-    disp_mem[63] = 0xFFFFFFF00FFFFFFF;
-
-    c8->core.draw_flag = 1;
-    c8->core.extended_flag = 1;*/
+    /* for debugging purposes */
+    c8->core.extended_flag = 1;
 
     while (!c8->core.exit_flag) {
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
         chip8_emulatecycle(c8);
         if (c8->core.draw_flag) {
-            uint32_t output[128 * 64]; /* TODO replace magic nums */
+            uint32_t output[SC8_DISP_WIDTH * SC8_DISP_HEIGHT];
             _render_output(disp_mem, output, c8->core.extended_flag);
-            sdl_layer_draw(output);
+            sdl_layer_draw(output, SC8_DISP_WIDTH);
             c8->core.draw_flag = 0;
         }
         //SDL_Delay(1);
