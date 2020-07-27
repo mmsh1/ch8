@@ -135,19 +135,21 @@ _rotate_r64(uint64_t bitarr, uint8_t shr)
     return (bitarr >> shr) | (bitarr << (64 - shr));
 }
 
-/*static void
-_render_output(uint64_t *disp_mem, uint32_t *output, uint16_t size)
-{
-    for(int i = 0; i < size; i++) {
-        output[i] = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
-    }
-}*/
-
 static void
-_render_output(uint64_t *disp_mem, uint32_t *output, uint16_t size)
+_render_output(uint64_t *disp_mem, uint32_t *output, uint8_t ext_flag)
 {
-    for(int i = 0; i < size; i++) {
-        output[i] = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
+    if (ext_flag) {
+        for(int i = 0; i < 128 * 64; i++) {
+            output[i] = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
+        }
+    } else {
+        for(int i = 0; i < 64 * 32; i++) {
+           uint32_t pix = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
+           output[i] = pix;
+           output[i + 1] = pix;
+           output[i + 64] = pix;
+           output[i + 64 + 1] = pix;
+        }
     }
 }
 
@@ -414,10 +416,9 @@ c8_Dxyn(chip8 *c8)
     if (height != 0) {
         for (int row = 0; row < height; row++) {
             uint64_t *disp_row = &(disp_mem[((ypos + row) & mask_height) +
-            (xpos > 63) ]);
-
+                    (xpos > 63? 1 : 0)]);
+            //uint64_t *disp_row = &(disp_mem[(ypos + row) % 64]);
             uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
-            //uint8_t sprite_row = c8->RAM[c8->core.I + row];
             flag |= *disp_row & sprite_row;
             *disp_row ^= sprite_row;
         }
@@ -781,12 +782,22 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    /*disp_mem[2] = 0xFFFFFFFFFFFFFFFF;
+    disp_mem[4] = 0xFFFFFFFFFFFFFFFF;
+    disp_mem[21] = 0xFFFFFFFFFFFFFFFF;
+
+    disp_mem[31] = 0xFF00FFFFFFFFFFFF;
+    disp_mem[63] = 0xFFFFFFF00FFFFFFF;
+
+    c8->core.draw_flag = 1;
+    c8->core.extended_flag = 1;*/
+
     while (!c8->core.exit_flag) {
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
         chip8_emulatecycle(c8);
         if (c8->core.draw_flag) {
             uint32_t output[128 * 64]; /* TODO replace magic nums */
-            _render_output(disp_mem, output, 128 * 64);
+            _render_output(disp_mem, output, c8->core.extended_flag);
             sdl_layer_draw(output);
             c8->core.draw_flag = 0;
         }
