@@ -395,8 +395,8 @@ c8_Dxyn(chip8 *c8)
     uint8_t disp_width, mask_width;
     uint8_t disp_height, mask_height;
 
-    uint8_t ypos = c8->core.V[y];
-    uint8_t xpos = c8->core.V[x] + 8;
+    uint8_t ypos;
+    uint8_t xpos;
     uint64_t flag = 0;
 
     c8->core.V[0xF] = 0;
@@ -413,12 +413,13 @@ c8_Dxyn(chip8 *c8)
         mask_height = 31;
     }
 
+    xpos = c8->core.V[x] + 8;
+
     if (height != 0) {
         for (int row = 0; row < height; row++) {
+            ypos = (c8->core.V[y] + row) & mask_width;
             /* TODO non-readable! */
-            uint64_t *disp_row = &(disp_mem[(((ypos + row) & mask_height) * 2) +
-                    (xpos > 63? 1 : 0)]);
-            //uint64_t *disp_row = &(disp_mem[(ypos + row) % 64]);
+            uint64_t *disp_row = &(disp_mem[ypos * 2 + (xpos > (63 + 8)? 1 : 0)]);
             uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
             flag |= *disp_row & sprite_row;
             *disp_row ^= sprite_row;
@@ -429,7 +430,16 @@ c8_Dxyn(chip8 *c8)
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
         /* TODO */
-        fprintf(stderr, "Dxyn zero nibble case!\n");
+        for (int row = 0; row < 16; row++) {
+            ypos = (c8->core.V[y] + row) & mask_width;
+            uint64_t *disp_row = &(disp_mem[ypos * 2 + (xpos > (63 + 8)? 1 : 0)]);
+
+            uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row * 2], xpos);
+            sprite_row |= _rotate_r64((uint64_t)c8->RAM[c8->core.I + row * 2 + 1], xpos + 8);
+
+            flag |= *disp_row & sprite_row;
+            *disp_row ^= sprite_row;
+        }
     }
     c8->core.draw_flag = 1;
 }
