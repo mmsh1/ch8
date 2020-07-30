@@ -95,7 +95,7 @@ static c8_opcode_func optable_8[0x0E + 1];
 static c8_opcode_func optable_E[0xA1 + 1];
 static c8_opcode_func optable_F[0x85 + 1];
 
-uint64_t disp_mem[2 * SC8_DISP_HEIGHT]; /* 2 uint64 per row */
+uint8_t disp_mem[SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8];
 
 static uint8_t lres_sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
@@ -129,26 +129,17 @@ static uint8_t hres_sprites[100] = {
     0xFF, 0xFF, 0xC3, 0xC3, 0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF,   /* 9 */
 };
 
-static uint64_t
-_rotate_r64(uint64_t bitarr, uint8_t shr)
-{
-    return (bitarr >> shr) | (bitarr << (64 - shr));
-}
-
 static void
-_render_output(uint64_t *disp_mem, uint32_t *output, uint8_t ext_flag)
+_render_output(uint8_t *disp_mem, uint32_t *output, uint8_t ext_flag)
 {
     if (ext_flag) {
         for(int i = 0; i < 128 * 64; i++) {
-            output[i] = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
+            output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
         }
     } else {
+        /* TODO */
         for(int i = 0; i < 64 * 32; i++) {
-           uint32_t pix = 0xFFFFFFFF * ((disp_mem[i / 64] >> (63 - i % 64)) & 1);
-           output[i] = pix;
-           output[i + 1] = pix;
-           output[i + 64] = pix;
-           output[i + 64 + 1] = pix;
+            output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
         }
     }
 }
@@ -156,7 +147,7 @@ _render_output(uint64_t *disp_mem, uint32_t *output, uint8_t ext_flag)
 static void
 c8_00E0(chip8 *c8)
 {
-    memset(disp_mem, 0, sizeof(uint64_t)* 2 * SC8_DISP_HEIGHT); /* TODO rewrite */
+    memset(disp_mem, 0, sizeof(uint8_t)* (SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8));
     c8->core.draw_flag = 1;
 }
 
@@ -397,7 +388,6 @@ c8_Dxyn(chip8 *c8)
 
     uint8_t ypos;
     uint8_t xpos;
-    uint64_t flag = 0;
 
     c8->core.V[0xF] = 0;
 
@@ -413,32 +403,47 @@ c8_Dxyn(chip8 *c8)
         mask_height = 31;
     }
 
-    xpos = c8->core.V[x] + 8;
-
+    /* FIXME sprite bug */
     if (height != 0) {
-        for (int row = 0; row < height; row++) {
-            ypos = (c8->core.V[y] + row) & mask_width;
-            /* TODO non-readable! */
-            uint64_t *disp_row = &(disp_mem[ypos * 2 + (xpos > (63 + 8)? 1 : 0)]);
-            uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row], xpos);
-            flag |= *disp_row & sprite_row;
-            *disp_row ^= sprite_row;
-        }
-        if (flag) {
-                c8->core.V[0xF] = 1;
+        for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
+            for (uint8_t sprite_col = 0; sprite_col < 8; sprite_col++) {
+                uint8_t pix = ((c8->RAM[c8->core.I + sprite_row] & (0x80 >> sprite_col)) != 0);
+                if (pix) {
+                    xpos = (c8->core.V[x] + sprite_col) & mask_width;
+                    ypos = (c8->core.V[y] + sprite_row) & mask_height;
+
+                    int bitpos_global = ypos * disp_width + xpos;
+                    int bitpos_internal = 1 << (bitpos_global & 0x07);
+                    int bytepos = bitpos_global >> 3;
+
+                    if (disp_mem[bytepos] & bitpos_internal) {
+                        c8->core.V[0xF] = 1;
+                    }
+                    disp_mem[bytepos] ^= bitpos_internal;
+                }
+            }
         }
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
-        /* TODO */
-        for (int row = 0; row < 16; row++) {
-            ypos = (c8->core.V[y] + row) & mask_width;
-            uint64_t *disp_row = &(disp_mem[ypos * 2 + (xpos > (63 + 8)? 1 : 0)]);
-
-            uint64_t sprite_row = _rotate_r64((uint64_t)c8->RAM[c8->core.I + row * 2], xpos);
-            sprite_row |= _rotate_r64((uint64_t)c8->RAM[c8->core.I + row * 2 + 1], xpos + 8);
-
-            flag |= *disp_row & sprite_row;
-            *disp_row ^= sprite_row;
+        for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
+            for (uint8_t sprite_col = 0; sprite_col < 16; sprite_col++) {
+                uint8_t pix;
+                if (sprite_col > 7) {
+                    pix = ((c8->RAM[c8->core.I + sprite_row * 2 + 1] & (0x80 >> (sprite_col & 0x07))) != 0);
+                } else {
+                    pix = ((c8->RAM[c8->core.I + sprite_row * 2] & (0x80 >> sprite_col)) != 0);
+                }
+                if (pix) {
+                    xpos = (c8->core.V[x] + sprite_col) & mask_width;
+                    ypos = (c8->core.V[y] + sprite_row) & mask_height;
+                    int bitpos_global = ypos * disp_width + xpos;
+                    int bitpos_internal = 1 << (bitpos_global & 0x07);
+                    int bytepos = bitpos_global >> 3;
+                    if (disp_mem[bytepos] & bitpos_internal) {
+                        c8->core.V[0xF] = 1;
+                    }
+                    disp_mem[bytepos] ^= bitpos_internal;}
+            }
         }
     }
     c8->core.draw_flag = 1;
@@ -762,9 +767,9 @@ chip8_loadgame(chip8 *c8, const char *game_name)
 int
 main(int argc, char **argv)
 {
-    if (argc != 3) {
+    if (argc != 2) {
         fprintf(stderr, "ERROR: wrong arguments!\n");
-        fprintf(stderr, "Usage: %s delay ROM\n", argv[0]);
+        fprintf(stderr, "Usage: %s ROM\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -783,12 +788,12 @@ main(int argc, char **argv)
     }
 
     chip8_init(c8);
-    if (chip8_loadgame(c8, argv[2]) == -1) {
+    if (chip8_loadgame(c8, argv[1]) == -1) {
         fprintf(stderr, "ERROR: game not loaded!\n");
         exit(EXIT_FAILURE);
     }
 
-    if (sdl_layer_init(argv[2], SC8_DISP_WIDTH, SC8_DISP_HEIGHT, 5) == -1) {
+    if (sdl_layer_init(argv[1], SC8_DISP_WIDTH, SC8_DISP_HEIGHT, 4) == -1) {
         fprintf(stderr, "ERROR: sdl_layer creation failed!\n");
         exit(EXIT_FAILURE);
     }
@@ -805,7 +810,7 @@ main(int argc, char **argv)
             sdl_layer_draw(output, SC8_DISP_WIDTH);
             c8->core.draw_flag = 0;
         }
-        //SDL_Delay(1);
+        SDL_Delay(1);
     }
     sdl_layer_destroy();
     free(c8);
