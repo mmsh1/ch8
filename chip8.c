@@ -413,8 +413,10 @@ c8_Dxyn(chip8 *c8)
                     ypos = (c8->core.V[y] + sprite_row) & mask_height;
 
                     int bitpos_global = ypos * disp_width + xpos;
-                    int bitpos_internal = 1 << (bitpos_global & 0x07);
+                    uint8_t bitpos_internal = (uint8_t)1 << (bitpos_global & 0x07);
                     int bytepos = bitpos_global >> 3;
+                    fprintf(stderr, "bitpos_global: %d\nbitpos_inter: %d\nbytepos: %d\n",
+                            bitpos_global, bitpos_internal, bytepos);
 
                     if (disp_mem[bytepos] & bitpos_internal) {
                         c8->core.V[0xF] = 1;
@@ -425,7 +427,7 @@ c8_Dxyn(chip8 *c8)
         }
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
-        for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
+        /*for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
             for (uint8_t sprite_col = 0; sprite_col < 16; sprite_col++) {
                 uint8_t pix;
                 if (sprite_col > 7) {
@@ -444,7 +446,7 @@ c8_Dxyn(chip8 *c8)
                     }
                     disp_mem[bytepos] ^= bitpos_internal;}
             }
-        }
+        }*/
     }
     c8->core.draw_flag = 1;
 }
@@ -800,6 +802,34 @@ main(int argc, char **argv)
 
     /* for debugging purposes */
     c8->core.extended_flag = 1;
+
+    /*c8_00E0(c8);
+    disp_mem[0] = 0xFF;
+    disp_mem[2] = 0xFF;
+    disp_mem[4] = 0xFF;
+    disp_mem[6] = 0xFF;
+    disp_mem[8] = 0xFF;
+    disp_mem[10] = 0xFF;
+    disp_mem[12] = 0xFF;
+    disp_mem[14] = 0xFF;
+
+    disp_mem[17] = 0xFF;
+    disp_mem[19] = 0xFF;
+    disp_mem[21] = 0xFF;
+    disp_mem[23] = 0xFF;
+    disp_mem[25] = 0xFF;
+    disp_mem[27] = 0xFF;
+    disp_mem[29] = 0xFF;
+    disp_mem[31] = 0xFF;
+
+    disp_mem[32] = 0x81;
+    disp_mem[34] = 0xFF;
+    disp_mem[36] = 0xFF;
+    disp_mem[38] = 0xFF;
+    disp_mem[40] = 0xFF;
+    disp_mem[42] = 0xFF;
+    disp_mem[44] = 0xFF;
+    disp_mem[46] = 0xFF;*/
 
     while (!c8->core.exit_flag) {
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
