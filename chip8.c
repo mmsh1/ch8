@@ -383,40 +383,31 @@ c8_Dxyn(chip8 *c8)
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
     uint8_t height = (c8->core.opcode & 0x000F);
 
-    uint8_t disp_width, mask_width;
-    uint8_t disp_height, mask_height;
+    uint8_t disp_width, mask_width, mask_height;
+    uint8_t ypos, xpos, pix;
 
-    uint8_t ypos;
-    uint8_t xpos;
+    uint16_t bitpos_global, bytepos;
+    uint8_t bitpos_internal;
 
     c8->core.V[0xF] = 0;
 
     if (c8->core.extended_flag) {
-        disp_width = 128;
-        disp_height = 64;
-        mask_width = 127;
-        mask_height = 63;
+        disp_width = 128, mask_width = 127, mask_height = 63;
     } else {
-        disp_width = 64;
-        disp_height = 32;
-        mask_width = 63;
-        mask_height = 31;
+        disp_width = 64, mask_width = 63, mask_height = 31;
     }
 
-    /* FIXME sprite bug */
     if (height != 0) {
         for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
             for (uint8_t sprite_col = 0; sprite_col < 8; sprite_col++) {
-                uint8_t pix = ((c8->RAM[c8->core.I + sprite_row] & (0x80 >> sprite_col)) != 0);
+                pix = ((c8->RAM[c8->core.I + sprite_row] & (0x80 >> sprite_col)) != 0);
                 if (pix) {
                     xpos = (c8->core.V[x] + sprite_col) & mask_width;
                     ypos = (c8->core.V[y] + sprite_row) & mask_height;
 
-                    int bitpos_global = ypos * disp_width + xpos;
-                    uint8_t bitpos_internal = (uint8_t)1 << (bitpos_global & 0x07);
-                    int bytepos = bitpos_global >> 3;
-                    fprintf(stderr, "bitpos_global: %d\nbitpos_inter: %d\nbytepos: %d\n",
-                            bitpos_global, bitpos_internal, bytepos);
+                    bitpos_global = ypos * disp_width + xpos;
+                    bitpos_internal = 0x80 >> (bitpos_global & 0x07);
+                    bytepos = bitpos_global >> 3;
 
                     if (disp_mem[bytepos] & bitpos_internal) {
                         c8->core.V[0xF] = 1;
@@ -427,9 +418,8 @@ c8_Dxyn(chip8 *c8)
         }
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
-        /*for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
+        for (uint8_t sprite_row = 0; sprite_row < 16; sprite_row++) {
             for (uint8_t sprite_col = 0; sprite_col < 16; sprite_col++) {
-                uint8_t pix;
                 if (sprite_col > 7) {
                     pix = ((c8->RAM[c8->core.I + sprite_row * 2 + 1] & (0x80 >> (sprite_col & 0x07))) != 0);
                 } else {
@@ -438,15 +428,18 @@ c8_Dxyn(chip8 *c8)
                 if (pix) {
                     xpos = (c8->core.V[x] + sprite_col) & mask_width;
                     ypos = (c8->core.V[y] + sprite_row) & mask_height;
-                    int bitpos_global = ypos * disp_width + xpos;
-                    int bitpos_internal = 1 << (bitpos_global & 0x07);
-                    int bytepos = bitpos_global >> 3;
+
+                    bitpos_global = ypos * disp_width + xpos;
+                    bitpos_internal = 0x80 >> (bitpos_global & 0x07);
+                    bytepos = bitpos_global >> 3;
+
                     if (disp_mem[bytepos] & bitpos_internal) {
                         c8->core.V[0xF] = 1;
                     }
-                    disp_mem[bytepos] ^= bitpos_internal;}
+                    disp_mem[bytepos] ^= bitpos_internal;
+                }
             }
-        }*/
+        }
     }
     c8->core.draw_flag = 1;
 }
@@ -802,34 +795,6 @@ main(int argc, char **argv)
 
     /* for debugging purposes */
     c8->core.extended_flag = 1;
-
-    /*c8_00E0(c8);
-    disp_mem[0] = 0xFF;
-    disp_mem[2] = 0xFF;
-    disp_mem[4] = 0xFF;
-    disp_mem[6] = 0xFF;
-    disp_mem[8] = 0xFF;
-    disp_mem[10] = 0xFF;
-    disp_mem[12] = 0xFF;
-    disp_mem[14] = 0xFF;
-
-    disp_mem[17] = 0xFF;
-    disp_mem[19] = 0xFF;
-    disp_mem[21] = 0xFF;
-    disp_mem[23] = 0xFF;
-    disp_mem[25] = 0xFF;
-    disp_mem[27] = 0xFF;
-    disp_mem[29] = 0xFF;
-    disp_mem[31] = 0xFF;
-
-    disp_mem[32] = 0x81;
-    disp_mem[34] = 0xFF;
-    disp_mem[36] = 0xFF;
-    disp_mem[38] = 0xFF;
-    disp_mem[40] = 0xFF;
-    disp_mem[42] = 0xFF;
-    disp_mem[44] = 0xFF;
-    disp_mem[46] = 0xFF;*/
 
     while (!c8->core.exit_flag) {
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
