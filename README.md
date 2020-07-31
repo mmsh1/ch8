@@ -12,7 +12,6 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 ## TODO
 * Add verbose mode to check internal values in separate SDL-window
 * Check on Windows
-* Add WinApi implementation for native Windows support
 
 ## Sources used
 [1] Cowgod's Chip-8 Technical Reference v.1.0
