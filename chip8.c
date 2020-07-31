@@ -5,17 +5,6 @@
 #include "chip8.h"
 #include "sdl_layer.h"
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0')
-
 enum {
     C8_DISP_WIDTH = 64,
     C8_DISP_HEIGHT = 32,
@@ -96,6 +85,7 @@ static c8_opcode_func optable_E[0xA1 + 1];
 static c8_opcode_func optable_F[0x85 + 1];
 
 uint8_t disp_mem[SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8];
+uint32_t disp_output[SC8_DISP_WIDTH * SC8_DISP_HEIGHT];
 
 static uint8_t lres_sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
@@ -130,16 +120,26 @@ static uint8_t hres_sprites[100] = {
 };
 
 static void
-_render_output(uint8_t *disp_mem, uint32_t *output, uint8_t ext_flag)
+_render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
 {
     if (ext_flag) {
-        for(int i = 0; i < 128 * 64; i++) {
-            output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
+        for(int i = 0; i < SC8_DISP_WIDTH * SC8_DISP_HEIGHT; i++) {
+            disp_output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
         }
     } else {
-        /* TODO */
-        for(int i = 0; i < 64 * 32; i++) {
-            output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
+        uint32_t pix;
+        uint8_t x = 0, y = 0;
+        for(int i = 0; i < C8_DISP_WIDTH * C8_DISP_HEIGHT; i++) {
+            pix = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
+            disp_output[SC8_DISP_WIDTH * y + x + 1]= pix;
+            disp_output[SC8_DISP_WIDTH * (y + 1) + x] = pix;
+            disp_output[SC8_DISP_WIDTH * y + x] = pix;
+            disp_output[SC8_DISP_WIDTH * (y + 1) + x + 1] = pix;
+            x += 2;
+            if (x == SC8_DISP_WIDTH) {
+                x = 0;
+                y += 2;
+            }
         }
     }
 }
@@ -585,7 +585,7 @@ c8_Fx85(chip8 *c8)
 static void
 c8_NULL(chip8 *c8)
 {
-    fprintf(stderr, "ERROR: calling c8_NULL\n");
+    fprintf(stderr, "ERROR: calling c8_NULL\n"); /* consider setting exit_flag set to 1 */
     fprintf(stderr, "opcode: %04X\n", c8->core.opcode & 0xFFFF);
 }
 
@@ -647,10 +647,10 @@ init_optable_main()
 static void
 init_optable_0()
 {
-    for (int i = 0; i < 0xFF + 1; i++) {
+    for (uint8_t i = 0; i < 0xFF + 1; i++) {
         optable_0[i] = c8_NULL;
     }
-    for (int i = 0xC0; i <= 0xCF; i++) {
+    for (uint8_t i = 0xC0; i <= 0xCF; i++) {
         optable_0[i] = c8_00Cx;
     }
     optable_0[0xE0] = c8_00E0;
@@ -685,7 +685,7 @@ init_optable_8()
 static void
 init_optable_E()
 {
-    for (int i = 0; i < 0xA1 + 1; i++) {
+    for (uint8_t i = 0; i < 0xA1 + 1; i++) {
         optable_E[i] = c8_NULL;
     }
     optable_E[0x9E] = c8_Ex9E;
@@ -695,7 +695,7 @@ init_optable_E()
 static void
 init_optable_F()
 {
-    for (int i = 0; i < 0x85 + 1; i++) {
+    for (uint8_t i = 0; i < 0x85 + 1; i++) {
         optable_F[i] = c8_NULL;
     }
     optable_F[0x07] = c8_Fx07;
@@ -775,6 +775,8 @@ main(int argc, char **argv)
     init_optable_F();
 
     chip8 *c8 = NULL;
+    memset(disp_mem, 0, sizeof(disp_mem[0]) * (SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8));
+    memset(disp_output, 0, sizeof(disp_output[0]) * SC8_DISP_WIDTH * SC8_DISP_HEIGHT);
 
     c8 = malloc(sizeof(*c8));
     if (c8 == NULL) {
@@ -794,15 +796,14 @@ main(int argc, char **argv)
     }
 
     /* for debugging purposes */
-    c8->core.extended_flag = 1;
+    //c8->core.extended_flag = 1;
 
     while (!c8->core.exit_flag) {
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
         chip8_emulatecycle(c8);
         if (c8->core.draw_flag) {
-            uint32_t output[SC8_DISP_WIDTH * SC8_DISP_HEIGHT];
-            _render_output(disp_mem, output, c8->core.extended_flag);
-            sdl_layer_draw(output, SC8_DISP_WIDTH);
+            _render_output(disp_mem, disp_output, c8->core.extended_flag);
+            sdl_layer_draw(disp_output, SC8_DISP_WIDTH);
             c8->core.draw_flag = 0;
         }
         SDL_Delay(1);
