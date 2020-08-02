@@ -647,7 +647,7 @@ init_optable_main()
 static void
 init_optable_0()
 {
-    for (uint8_t i = 0; i < 0xFF + 1; i++) {
+    for (uint16_t i = 0; i < 0xFF + 1; i++) {
         optable_0[i] = c8_NULL;
     }
     for (uint8_t i = 0xC0; i <= 0xCF; i++) {
