@@ -127,6 +127,12 @@ _render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
             disp_output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
         }
     } else {
+        /* quadruple grafic scale */
+        /*
+        *  [*][ ]    [*][*]
+        *  [ ][ ] -> [*][*]
+        */
+
         uint32_t pix;
         uint8_t x = 0, y = 0;
         for(int i = 0; i < C8_DISP_WIDTH * C8_DISP_HEIGHT; i++) {
@@ -162,14 +168,15 @@ c8_00EE(chip8 *c8)
 static void
 c8_00Cx(chip8 *c8)
 {
-    /*uint8_t x = c8->core.opcode & 0x000F;
-    uint8_t actual_height = 32;
+    uint8_t x = c8->core.opcode & 0x000F;
+    uint8_t disp_width = 64, disp_height = 32;
     if (c8->core.extended_flag) {
-        actual_height = 64;
+        disp_width = 128, disp_height = 64;
     }
     for (int i = 0; i < x; i++) {
+
     }
-    c8->core.draw_flag = 1;*/
+    c8->core.draw_flag = 1;
 }
 
 static void
@@ -794,9 +801,6 @@ main(int argc, char **argv)
         fprintf(stderr, "ERROR: sdl_layer creation failed!\n");
         exit(EXIT_FAILURE);
     }
-
-    /* for debugging purposes */
-    //c8->core.extended_flag = 1;
 
     while (!c8->core.exit_flag) {
         sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
