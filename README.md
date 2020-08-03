@@ -37,3 +37,7 @@ https://courses.ece.cornell.edu/ece5990/ECE5725_Fall2016_Projects/Lab_group_bcp3
 [6] Useful information about all possible quirks
 
 https://github.com/Chromatophore/HP48-Superchip
+
+[7] Cowgod's opcode list
+
+http://devernay.free.fr/hacks/chip8/chip8.html
