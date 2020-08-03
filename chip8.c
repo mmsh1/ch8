@@ -17,11 +17,9 @@ typedef void (*c8_opcode_func)(chip8 *);
 
 static void c8_00E0(chip8 *);
 static void c8_00EE(chip8 *);
-/*TODO*/
-static void c8_00Cx(chip8 *); /* SCD nibble: scroll screen x lines down */
-static void c8_00FB(chip8 *); /* SCL: scroll screen 4 pix left */
-static void c8_00FC(chip8 *); /* SCR: scroll screen 4 pix right */
-/* TODOend*/
+static void c8_00Cx(chip8 *);
+static void c8_00FB(chip8 *);
+static void c8_00FC(chip8 *);
 static void c8_00FD(chip8 *);
 static void c8_00FE(chip8 *);
 static void c8_00FF(chip8 *);
@@ -135,7 +133,7 @@ _render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
 
         uint32_t pix;
         uint8_t x = 0, y = 0;
-        for(int i = 0; i < C8_DISP_WIDTH * C8_DISP_HEIGHT; i++) {
+        for(uint16_t i = 0; i < C8_DISP_WIDTH * C8_DISP_HEIGHT; i++) {
             pix = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
             disp_output[SC8_DISP_WIDTH * y + x + 1]= pix;
             disp_output[SC8_DISP_WIDTH * (y + 1) + x] = pix;
@@ -164,30 +162,65 @@ c8_00EE(chip8 *c8)
     c8->core.SP -= 1;
 }
 
-/*TODO*/
 static void
 c8_00Cx(chip8 *c8)
 {
-    uint8_t x = c8->core.opcode & 0x000F;
+    uint8_t nibble = c8->core.opcode & 0x000F;
     uint8_t disp_width = 64, disp_height = 32;
     if (c8->core.extended_flag) {
         disp_width = 128, disp_height = 64;
     }
-    for (int i = 0; i < x; i++) {
+    disp_width >>= 3;
 
+    int srcrow = disp_height - nibble - 1;
+    int destrow = disp_height - 1;
+
+    while (srcrow >= 0) {
+        memcpy(disp_mem + destrow * disp_width, disp_mem + srcrow * disp_width, disp_width);
+        srcrow--, destrow--;
+    }
+    memset(disp_mem, 0, disp_width * nibble);
+    c8->core.draw_flag = 1;
+}
+
+/*TODO*/
+/* scroll 4 pixels right */
+static void
+c8_00FB(chip8 *c8)
+{
+    uint8_t disp_width = 64, disp_height = 32;
+    if (c8->core.extended_flag) {
+        disp_width = 128, disp_height = 64;
+    }
+    disp_width >>= 3;
+    for (int y = 0; y < disp_height; y++) {
+        for (int x = disp_width - 1; x > 0; x--) {
+            disp_mem[y * disp_width + x] =
+                (disp_mem[y * disp_width + x] << 4) | (disp_mem[y * disp_width + x - 1] >> 4);
+
+        }
+        disp_mem[y * disp_width] <<= 4;
     }
     c8->core.draw_flag = 1;
 }
 
-static void
-c8_00FB(chip8 *c8)
-{
-    c8->core.draw_flag = 1;
-}
-
+/* scroll 4 pixels left*/
 static void
 c8_00FC(chip8 *c8)
 {
+    uint8_t disp_width = 64, disp_height = 32;
+    uint8_t x;
+    if (c8->core.extended_flag) {
+        disp_width = 128, disp_height = 64;
+    }
+    disp_width >>= 3;
+    for (int y = 0; y < disp_height; y++) {
+        for (x = 0; x < disp_width - 1; x++) {
+            disp_mem[y * disp_width + x] =
+                (disp_mem[y * disp_width + x] >> 4) | (disp_mem[y * disp_width + x + 1] << 4);
+        }
+        disp_mem[y * disp_width + x] >>= 4;
+    }
     c8->core.draw_flag = 1;
 }
 /* TODOend */
@@ -605,10 +638,14 @@ c8_goto_optable_0(chip8 *c8)
         fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Proceeding...\n");
     }
     if ((c8->core.opcode & 0x00F0) == 0x00C0) {
-        fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Aborting...\n");
-        exit(-1);
+        fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Proceeding...\n");
     }
-    /*fprintf(stderr, "current opcode: %04X\n", c8->core.opcode & 0xFFFF);*/
+    if ((c8->core.opcode & 0x00FF) == 0x00FB) {
+        fprintf(stderr, "SuperChip-8 instruction 00FB encountered! Proceeding...\n");
+    }
+    if ((c8->core.opcode & 0x00FF) == 0x00FC) {
+        fprintf(stderr, "SuperChip-8 instruction 00FC encountered! Proceeding...\n");
+    }
     optable_0[(c8->core.opcode) & 0x00FF](c8);
 }
 
