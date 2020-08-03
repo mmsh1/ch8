@@ -120,8 +120,9 @@ static uint8_t hres_sprites[100] = {
 static void
 _render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
 {
+    uint16_t i;
     if (ext_flag) {
-        for(int i = 0; i < SC8_DISP_WIDTH * SC8_DISP_HEIGHT; i++) {
+        for(i = 0; i < SC8_DISP_WIDTH * SC8_DISP_HEIGHT; i++) {
             disp_output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
         }
     } else {
@@ -133,7 +134,7 @@ _render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
 
         uint32_t pix;
         uint8_t x = 0, y = 0;
-        for(uint16_t i = 0; i < C8_DISP_WIDTH * C8_DISP_HEIGHT; i++) {
+        for(i = 0; i < C8_DISP_WIDTH * C8_DISP_HEIGHT; i++) {
             pix = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
             disp_output[SC8_DISP_WIDTH * y + x + 1]= pix;
             disp_output[SC8_DISP_WIDTH * (y + 1) + x] = pix;
@@ -165,6 +166,7 @@ c8_00EE(chip8 *c8)
 static void
 c8_00Cx(chip8 *c8)
 {
+    int srcrow, destrow;
     uint8_t nibble = c8->core.opcode & 0x000F;
     uint8_t disp_width = 64, disp_height = 32;
     if (c8->core.extended_flag) {
@@ -172,8 +174,8 @@ c8_00Cx(chip8 *c8)
     }
     disp_width >>= 3;
 
-    int srcrow = disp_height - nibble - 1;
-    int destrow = disp_height - 1;
+    srcrow = disp_height - nibble - 1;
+    destrow = disp_height - 1;
 
     while (srcrow >= 0) {
         memcpy(disp_mem + destrow * disp_width, disp_mem + srcrow * disp_width, disp_width);
@@ -183,38 +185,35 @@ c8_00Cx(chip8 *c8)
     c8->core.draw_flag = 1;
 }
 
-/*TODO*/
-/* scroll 4 pixels right */
 static void
 c8_00FB(chip8 *c8)
 {
     uint8_t disp_width = 64, disp_height = 32;
+    uint8_t x, y;
     if (c8->core.extended_flag) {
         disp_width = 128, disp_height = 64;
     }
     disp_width >>= 3;
-    for (int y = 0; y < disp_height; y++) {
-        for (int x = disp_width - 1; x > 0; x--) {
+    for (y = 0; y < disp_height; y++) {
+        for (x = disp_width - 1; x > 0; x--) {
             disp_mem[y * disp_width + x] =
                 (disp_mem[y * disp_width + x] << 4) | (disp_mem[y * disp_width + x - 1] >> 4);
-
         }
         disp_mem[y * disp_width] <<= 4;
     }
     c8->core.draw_flag = 1;
 }
 
-/* scroll 4 pixels left*/
 static void
 c8_00FC(chip8 *c8)
 {
     uint8_t disp_width = 64, disp_height = 32;
-    uint8_t x;
+    uint8_t x, y;
     if (c8->core.extended_flag) {
         disp_width = 128, disp_height = 64;
     }
     disp_width >>= 3;
-    for (int y = 0; y < disp_height; y++) {
+    for (y = 0; y < disp_height; y++) {
         for (x = 0; x < disp_width - 1; x++) {
             disp_mem[y * disp_width + x] =
                 (disp_mem[y * disp_width + x] >> 4) | (disp_mem[y * disp_width + x + 1] << 4);
@@ -223,7 +222,6 @@ c8_00FC(chip8 *c8)
     }
     c8->core.draw_flag = 1;
 }
-/* TODOend */
 
 static void
 c8_00FD(chip8 *c8)
@@ -424,10 +422,11 @@ c8_Dxyn(chip8 *c8)
     uint8_t height = (c8->core.opcode & 0x000F);
 
     uint8_t disp_width, mask_width, mask_height;
+    uint8_t sprite_row, sprite_col;
     uint8_t ypos, xpos, pix;
 
-    uint16_t bitpos_global, bytepos;
     uint8_t bitpos_internal;
+    uint16_t bitpos_global, bytepos;
 
     c8->core.V[0xF] = 0;
 
@@ -438,8 +437,8 @@ c8_Dxyn(chip8 *c8)
     }
 
     if (height != 0) {
-        for (uint8_t sprite_row = 0; sprite_row < height; sprite_row++) {
-            for (uint8_t sprite_col = 0; sprite_col < 8; sprite_col++) {
+        for (sprite_row = 0; sprite_row < height; sprite_row++) {
+            for (sprite_col = 0; sprite_col < 8; sprite_col++) {
                 pix = ((c8->RAM[c8->core.I + sprite_row] & (0x80 >> sprite_col)) != 0);
                 if (pix) {
                     xpos = (c8->core.V[x] + sprite_col) & mask_width;
@@ -458,8 +457,8 @@ c8_Dxyn(chip8 *c8)
         }
     } else {
         /* if height (nibble) equals 0 we draw 16*16 sprite */
-        for (uint8_t sprite_row = 0; sprite_row < 16; sprite_row++) {
-            for (uint8_t sprite_col = 0; sprite_col < 16; sprite_col++) {
+        for (sprite_row = 0; sprite_row < 16; sprite_row++) {
+            for (sprite_col = 0; sprite_col < 16; sprite_col++) {
                 if (sprite_col > 7) {
                     pix = ((c8->RAM[c8->core.I + sprite_row * 2 + 1] & (0x80 >> (sprite_col & 0x07))) != 0);
                 } else {
@@ -516,7 +515,8 @@ c8_Fx0A(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t no_key_pressed = 1;
-    for (uint8_t i = 0; i < 16; i++) {
+    uint8_t i;
+    for (i = 0; i < 16; i++) {
         if (c8->core.keys[i]) {
             c8->core.V[x] = i;
             no_key_pressed = 0;
@@ -580,7 +580,8 @@ static void
 c8_Fx55(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
-    for(uint8_t i = 0; i <= x; i++) {
+    uint8_t i;
+    for(i = 0; i <= x; i++) {
         c8->RAM[(c8->core.I) + i] = c8->core.V[i];
     }
 }
@@ -589,7 +590,8 @@ static void
 c8_Fx65(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
-    for (uint8_t i = 0; i <= x; i++) {
+    uint8_t i;
+    for (i = 0; i <= x; i++) {
         c8->core.V[i] = c8->RAM[(c8->core.I) + i];
     }
 }
@@ -598,12 +600,13 @@ static void
 c8_Fx75(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t i;
     if (x > 7) {
         fprintf(stderr, "ERROR: wrong x value(%d) in c8_Fx75!\n", x);
         c8->core.exit_flag = 1;
         return;
     }
-    for (uint8_t i = 0; i <= x; i++) {
+    for (i = 0; i <= x; i++) {
         c8->core.rpl_flags[i] = c8->core.V[i];
     }
 }
@@ -612,12 +615,13 @@ static void
 c8_Fx85(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
+    uint8_t i;
     if (x > 7) {
         fprintf(stderr, "ERROR: wrong x value(%d) in c8_Fx75!\n", x);
         c8->core.exit_flag = 1;
         return;
     }
-    for (uint8_t i = 0; i <= x; i++) {
+    for (i = 0; i <= x; i++) {
         c8->core.V[i] = c8->core.rpl_flags[i];
     }
 }
@@ -633,7 +637,6 @@ static void
 c8_goto_optable_0(chip8 *c8)
 {
 
-    /* TODO implement SuperChip-8 instructions */
     if ((c8->core.opcode & 0x00FF) == 0x00FF) {
         fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Proceeding...\n");
     }
@@ -691,10 +694,11 @@ init_optable_main()
 static void
 init_optable_0()
 {
-    for (uint16_t i = 0; i < 0xFF + 1; i++) {
+    uint16_t i;
+    for (i = 0; i < 0xFF + 1; i++) {
         optable_0[i] = c8_NULL;
     }
-    for (uint8_t i = 0xC0; i <= 0xCF; i++) {
+    for (i = 0xC0; i <= 0xCF; i++) {
         optable_0[i] = c8_00Cx;
     }
     optable_0[0xE0] = c8_00E0;
@@ -729,7 +733,8 @@ init_optable_8()
 static void
 init_optable_E()
 {
-    for (uint8_t i = 0; i < 0xA1 + 1; i++) {
+    uint8_t i;
+    for (i = 0; i < 0xA1 + 1; i++) {
         optable_E[i] = c8_NULL;
     }
     optable_E[0x9E] = c8_Ex9E;
@@ -739,7 +744,8 @@ init_optable_E()
 static void
 init_optable_F()
 {
-    for (uint8_t i = 0; i < 0x85 + 1; i++) {
+    uint8_t i;
+    for (i = 0; i < 0x85 + 1; i++) {
         optable_F[i] = c8_NULL;
     }
     optable_F[0x07] = c8_Fx07;
@@ -806,6 +812,7 @@ chip8_loadgame(chip8 *c8, const char *game_name)
 int
 main(int argc, char **argv)
 {
+    chip8 *c8 = NULL;
     if (argc != 2) {
         fprintf(stderr, "ERROR: wrong arguments!\n");
         fprintf(stderr, "Usage: %s ROM\n", argv[0]);
@@ -818,7 +825,6 @@ main(int argc, char **argv)
     init_optable_E();
     init_optable_F();
 
-    chip8 *c8 = NULL;
     memset(disp_mem, 0, sizeof(disp_mem[0]) * (SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8));
     memset(disp_output, 0, sizeof(disp_output[0]) * SC8_DISP_WIDTH * SC8_DISP_HEIGHT);
 
