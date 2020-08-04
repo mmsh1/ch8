@@ -10,6 +10,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 * type `make`
 
 ## TODO
+* Add XO-Chip support
 * Add verbose mode to check internal values in separate SDL-window
 * Check on Windows
 
