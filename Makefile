@@ -1,6 +1,6 @@
 CFLAGS = -Wall -Werror -Wextra -std=c89 -g3 -pedantic
 LIBS = -lSDL2
-#INCLUDE = -I/usr/include/
+INCLUDE = -I/usr/include/
 
 all: options chip8
 
@@ -10,7 +10,7 @@ options:
 	@echo "CC      = $(CC)"
 
 chip8: chip8.o sdl_layer.o
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
+	$(CC) $(INCLUDE) $(CFLAGS) $(LIBS) -o $@ $^
 
 sdl_layer.o: sdl_layer.c
 	$(CC) -c $(CFLAGS) -o $@ $<
