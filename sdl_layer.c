@@ -109,8 +109,15 @@ sdl_handle_keystroke(uint8_t *keys, uint8_t *quit_flag)
 void
 sdl_layer_draw(uint32_t *output, uint8_t width)
 {
+    int i;
+    for (i = 0; i < 8192; i++) {
+        if (output[i]) {
+            output[i] = 255; /* TODO add color macro */
+        } else {
+            output[i] = 500400;
+        }
+    }
     SDL_UpdateTexture(texture, NULL, output, sizeof(output[0]) * width);
-    /* SDL_SetTextureColorMod(texture, 0, 149, 255);*/
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
