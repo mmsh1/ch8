@@ -110,6 +110,8 @@ void
 sdl_layer_draw(uint32_t *output, uint8_t width)
 {
     SDL_UpdateTexture(texture, NULL, output, sizeof(output[0]) * width);
+    SDL_SetTextureColorMod(texture, 0, 149, 255);
+
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
