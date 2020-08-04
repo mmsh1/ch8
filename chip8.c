@@ -636,19 +636,6 @@ c8_NULL(chip8 *c8)
 static void
 c8_goto_optable_0(chip8 *c8)
 {
-
-    if ((c8->core.opcode & 0x00FF) == 0x00FF) {
-        fprintf(stderr, "SuperChip-8 instruction 00FF encountered! Proceeding...\n");
-    }
-    if ((c8->core.opcode & 0x00F0) == 0x00C0) {
-        fprintf(stderr, "SuperChip-8 instruction 00Cx encountered! Proceeding...\n");
-    }
-    if ((c8->core.opcode & 0x00FF) == 0x00FB) {
-        fprintf(stderr, "SuperChip-8 instruction 00FB encountered! Proceeding...\n");
-    }
-    if ((c8->core.opcode & 0x00FF) == 0x00FC) {
-        fprintf(stderr, "SuperChip-8 instruction 00FC encountered! Proceeding...\n");
-    }
     optable_0[(c8->core.opcode) & 0x00FF](c8);
 }
 
@@ -813,6 +800,7 @@ int
 main(int argc, char **argv)
 {
     chip8 *c8 = NULL;
+
     if (argc != 2) {
         fprintf(stderr, "ERROR: wrong arguments!\n");
         fprintf(stderr, "Usage: %s ROM\n", argv[0]);
