@@ -107,14 +107,14 @@ sdl_handle_keystroke(uint8_t *keys, uint8_t *quit_flag)
 }
 
 void
-sdl_layer_draw(uint32_t *output, uint8_t width)
+sdl_layer_draw(uint32_t *output, uint16_t size, uint8_t width)
 {
     int i;
-    for (i = 0; i < 8192; i++) {
+    for (i = 0; i < size; i++) {
         if (output[i]) {
-            output[i] = 255; /* TODO add color macro */
+            output[i] = FG_COLOR;
         } else {
-            output[i] = 500400;
+            output[i] = BG_COLOR;
         }
     }
     SDL_UpdateTexture(texture, NULL, output, sizeof(output[0]) * width);

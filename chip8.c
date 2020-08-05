@@ -152,7 +152,7 @@ _render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
 static void
 c8_00E0(chip8 *c8)
 {
-    memset(disp_mem, 0, sizeof(uint8_t)* (SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8));
+    memset(disp_mem, 0, sizeof(disp_mem[0])* (SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8));
     c8->core.draw_flag = 1;
 }
 
@@ -838,7 +838,9 @@ main(int argc, char **argv)
         chip8_emulatecycle(c8);
         if (c8->core.draw_flag) {
             _render_output(disp_mem, disp_output, c8->core.extended_flag);
-            sdl_layer_draw(disp_output, SC8_DISP_WIDTH);
+            sdl_layer_draw(disp_output,
+                           SC8_DISP_WIDTH * SC8_DISP_HEIGHT,
+                           SC8_DISP_WIDTH);
             c8->core.draw_flag = 0;
         }
         SDL_Delay(1);
