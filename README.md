@@ -2,18 +2,67 @@
 This is yet another Chip-8 interpreter with SuperChip instructions support.
 
 
-## Building for Linux
+## Building on Linux
 * Requirements
-  * SDL2 library <https://www.libsdl.org/>
+  * SDL2 library <https://wiki.libsdl.org/Installation#Linux.2FUnix>
   * GCC, Clang or TCC compiler
   * make
 * type `make`
+
 
 ## TODO
 * Add XO-Chip support
 * Add verbose mode to check internal values in separate SDL-window
 * Check on Windows
 
+## Technical specifications
+* 4KB RAM
+* 128x64 pixels in SuperChip8 mode / 64x32 in Chip8 mode
+* 16 8-bit registers
+* 16 keys on keyboard
+* 16 level stack
+* 1 16-bit address register
+
+## ROMs
+
+I have a small collection of ROMs that I like.
+You can download more ROMs here:
+
+<http://devernay.free.fr/hacks/chip8/GAMES.zip>
+<http://devernay.free.fr/hacks/chip8/SGAMES.zip>
+
+Many real cool games also available here. Note that some of them
+can be written according to XO-Chip specification that currenly not supported.
+
+<https://github.com/JohnEarnest/chip8Archive/tree/master/roms>
+
+ 
+## Keyboard
+
+Original Chip8 had hexadecimal keyboard
+```
++---------------+
+| 1 | 2 | 3 | C |
++---+---+---+---+
+| 4 | 5 | 6 | D |
++---+---+---+---+
+| 7 | 8 | 9 | E |
++---+---+---+---+
+| A | 0 | B | F |
++---------------+
+```
+ch8 maps this keyboard on following layout
+```
++---------------+
+| 1 | 2 | 3 | 4 |
++---+---+---+---+
+| Q | W | E | R |
++---+---+---+---+
+| A | S | D | F |
++---+---+---+---+
+| Z | X | C | V |
++---------------+
+```
 ## Sources used
 [1] Cowgod's Chip-8 Technical Reference v.1.0
 
