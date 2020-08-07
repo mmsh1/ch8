@@ -17,7 +17,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 
 ## Technical specifications
 * 4KB RAM
-* 128x64 pixels in SuperChip8 mode / 64x32 in Chip8 mode
+* 128x64 pixels in SuperChip8 mode / 64x32 pixels in Chip8 mode
 * 16 8-bit registers
 * 16 keys on keyboard
 * 16 level stack
