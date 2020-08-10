@@ -1,7 +1,7 @@
 #ifndef SDL_LAYER
 #define SDL_LAYER
 
-/* #define SDL_DISABLE_IMMINTRIN_H 1 */ /* for TCC compiler */
+#define SDL_DISABLE_IMMINTRIN_H 1  /* for TCC compiler */
 
 /* gray:        88888888 */
 /* dark gray:   22222222 */
