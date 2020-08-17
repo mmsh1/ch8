@@ -3,11 +3,12 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 
 ## Screenshots
 <p align="center">
-  <img src=".png">
-  <img src=".png">
+  <img src="https://imgur.com/g2Q9yJh.png">
+  <img src="https://imgur.com/I8quAUi.png">
   
-  <img src=".png">
-  <img src=".png">
+  <img src="https://imgur.com/oZ5khht.png">
+  <img src="https://imgur.com/PlPFdPY.png">
+  <img src="https://imgur.com/RiN6qcz.png">
   
   <img src="https://imgur.com/zy6yhEt.png">
   <img src="https://imgur.com/hIMnM89.png">
