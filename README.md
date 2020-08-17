@@ -77,9 +77,9 @@ ch8 maps this keyboard on following layout
 
 ### DVN8
 <p align="center">
-  <img src="https://imgur.com/4F9iTUr.png">
-  <img src="https://imgur.com/KQCChA7.png">
-  <img src="https://imgur.com/pYl66la.png">
+  <img src="https://imgur.com/gV9m0ir.png">
+  <img src="https://imgur.com/ltuKxtJ.png">
+  <img src="https://imgur.com/twX3ukB.png">
 </p>  
 
 ### Space Invaders
