@@ -3,14 +3,14 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 
 ## Screenshots
 <p align="center">
-  <img src="https://imgur.com/f6va5Gs.png">
-  <img src="https://imgur.com/6IFrwdh.png">
+  <img src=".png">
+  <img src=".png">
   
-  <img src="https://imgur.com/6IFrwdh.png">
-  <img src="https://imgur.com/6IFrwdh.png">
+  <img src=".png">
+  <img src=".png">
   
-  <img src="https://imgur.com/BOiCjRv.png">
-  <img src="https://imgur.com/2lH4Rtw.png">
+  <img src="https://imgur.com/zy6yhEt.png">
+  <img src="https://imgur.com/hIMnM89.png">
 </p>
 
 ## Building on Linux
