@@ -1,6 +1,13 @@
 # ch8
 This is yet another Chip-8 interpreter with SuperChip instructions support.
 
+## Screenshots
+<p align="center">
+ <img src="https://imgur.com/wZruCoV">
+ <img src="https://imgur.com/rz6Kbg7">
+ <img src="https://imgur.com/afAY3xh">
+ <img src="https://imgur.com/MJjaO7S">
+</p>
 
 ## Building on Linux
 * Requirements
