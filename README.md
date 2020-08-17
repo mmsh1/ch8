@@ -1,6 +1,14 @@
 # ch8
 This is yet another Chip-8 interpreter with SuperChip instructions support.
 
+## Screenshots
+<p align="center">
+  <img src="https://i.imgur.com/SYD9fuz.png">
+  <img src="https://i.imgur.com/SYD9fuz.png">
+  <img src="https://i.imgur.com/SYD9fuz.png">
+  <img src="https://i.imgur.com/SYD9fuz.png">
+</p>
+
 ## Building on Linux
 * Requirements
   * SDL2 library <https://wiki.libsdl.org/Installation#Linux.2FUnix>
