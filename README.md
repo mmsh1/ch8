@@ -1,28 +1,6 @@
 # ch8
 This is yet another Chip-8 interpreter with SuperChip instructions support.
 
-## Screenshots
-
-### Outlaw
-<p align="center">
-  <img src="https://imgur.com/g2Q9yJh.png">
-</p>
-
-### CAR
-<p align="center">
-  <img src="https://imgur.com/I8quAUi.png">
-  <img src="https://imgur.com/oZ5khht.png">
-  <img src="https://imgur.com/PlPFdPY.png">
-</p>
-
-### DVN8
-<p align="center">
-  <img src="https://imgur.com/RiN6qcz.png">
-  
-  <img src="https://imgur.com/zy6yhEt.png">
-  <img src="https://imgur.com/hIMnM89.png">
-</p>
-
 ## Building on Linux
 * Requirements
   * SDL2 library <https://wiki.libsdl.org/Installation#Linux.2FUnix>
@@ -85,6 +63,31 @@ ch8 maps this keyboard on following layout
 | Z | X | C | V |
 +---------------+
 ```
+## Screenshots
+
+### Outlaw
+<p align="center">
+  <img src="https://imgur.com/g2Q9yJh.png">
+</p>
+
+### CAR
+<p align="center">
+  <img src="https://imgur.com/I8quAUi.png">
+</p>
+
+### DVN8
+<p align="center">
+  <img src="https://imgur.com/oZ5khht.png">
+  <img src="https://imgur.com/PlPFdPY.png">
+  <img src="https://imgur.com/RiN6qcz.png">
+</p>  
+
+### Space Invaders
+<p align="center">
+  <img src="https://imgur.com/zy6yhEt.png">
+  <img src="https://imgur.com/hIMnM89.png">
+</p>
+
 ## Sources used
 [1] Cowgod's Chip-8 Technical Reference v.1.0
 
