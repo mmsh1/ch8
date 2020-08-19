@@ -4,6 +4,12 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
 
+static uint32_t
+create_argb(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    return (b << 24) | (g << 16) | (r << 8) | a;
+}
+
 int
 sdl_layer_init(const char *wname, int width, int height, int scale)
 {
@@ -31,7 +37,7 @@ sdl_layer_init(const char *wname, int width, int height, int scale)
         return -1;
     }
     texture = SDL_CreateTexture(renderer,
-                                SDL_PIXELFORMAT_RGBA32,
+                                SDL_PIXELFORMAT_ARGB32,
                                 SDL_TEXTUREACCESS_STREAMING,
                                 width,
                                 height);
@@ -112,9 +118,9 @@ sdl_layer_draw(uint32_t *output, uint16_t size, uint8_t width)
     int i;
     for (i = 0; i < size; i++) {
         if (output[i]) {
-            output[i] = FG_COLOR;
+            output[i] = create_argb(251, 248, 190, 0);
         } else {
-            output[i] = BG_COLOR;
+            output[i] = create_argb(35, 78, 112, 0);
         }
     }
     SDL_UpdateTexture(texture, NULL, output, sizeof(output[0]) * width);
