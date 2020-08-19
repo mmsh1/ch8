@@ -64,6 +64,8 @@ ch8 maps this keyboard on following layout
 +---------------+
 ```
 ## Screenshots
+You can use any pair of colors you want. Just set them in RGB format in **sdl_layer_draw** function.
+It located in **sdl_layer.c**.
 
 ### Outlaw
 <p align="center">
