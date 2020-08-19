@@ -11,7 +11,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 
 ## TODO
 * Add XO-Chip support
-* Add verbose mode to check internal values in separate SDL-window
+* Add debugger
 * Check on Windows
 
 ## Technical specifications
