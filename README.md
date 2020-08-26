@@ -11,7 +11,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 
 ## TODO
 * Add XO-Chip support
-* Add verbose mode to check internal values in separate SDL-window
+* Add debugger
 * Check on Windows
 
 ## Technical specifications
@@ -32,7 +32,7 @@ You can download more ROMs here:
 <http://devernay.free.fr/hacks/chip8/SGAMES.zip>
 
 Many real cool games also available here. Note that some of them
-can be written according to XO-Chip specification that currenly not supported.
+could be written according to XO-Chip specification that currenly not supported.
 
 <https://github.com/JohnEarnest/chip8Archive/tree/master/roms>
 
@@ -64,6 +64,8 @@ ch8 maps this keyboard on following layout
 +---------------+
 ```
 ## Screenshots
+You can use any pair of colors you want. Just set them in RGB format in **sdl_layer_draw** function.
+It located in **sdl_layer.c**.
 
 ### Outlaw
 <p align="center">
