@@ -70,11 +70,11 @@ static void c8_goto_optable_8(chip8 *);
 static void c8_goto_optable_E(chip8 *);
 static void c8_goto_optable_F(chip8 *);
 
-static void init_optable_main();
-static void init_optable_0();
-static void init_optable_8();
-static void init_optable_E();
-static void init_optable_F();
+static void init_optable_main(void);
+static void init_optable_0(void);
+static void init_optable_8(void);
+static void init_optable_E(void);
+static void init_optable_F(void);
 
 static c8_opcode_func optable_main[0xF + 1];
 static c8_opcode_func optable_0[0xFF + 1];
