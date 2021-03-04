@@ -825,11 +825,13 @@ main(int argc, char **argv)
     chip8_init(c8);
     if (chip8_loadgame(c8, argv[1]) == -1) {
         fprintf(stderr, "ERROR: game not loaded!\n");
+        free(c8);
         exit(EXIT_FAILURE);
     }
 
     if (sdl_layer_init(argv[1], SC8_DISP_WIDTH, SC8_DISP_HEIGHT, 4) == -1) {
         fprintf(stderr, "ERROR: sdl_layer creation failed!\n");
+        free(c8);
         exit(EXIT_FAILURE);
     }
 

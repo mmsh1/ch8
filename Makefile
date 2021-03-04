@@ -10,7 +10,7 @@ options:
 	@echo "CC      = $(CC)"
 
 chip8: chip8.o sdl_layer.o
-	$(CC) $^ $(INCLUDE) $(CFLAGS) $(LIBS) -o $@
+	$(CC) -o $@ $^ $(INCLUDE) $(LIBS)
 
 sdl_layer.o: sdl_layer.c
 	$(CC) -c $(CFLAGS) -o $@ $<
