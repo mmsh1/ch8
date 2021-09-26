@@ -1,6 +1,5 @@
 CFLAGS = -Wall -Werror -Wextra -std=c89 -pedantic
 LIBS = -lSDL2
-INCLUDE = -I/usr/include/
 
 all: options chip8
 
@@ -21,3 +20,5 @@ chip8.o: chip8.c
 clean:
 	rm -f chip8
 	rm -f *.o
+
+.PHONY: all options clean
