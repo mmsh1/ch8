@@ -1,8 +1,6 @@
 #ifndef SDL_LAYER
 #define SDL_LAYER
 
-#define SDL_DISABLE_IMMINTRIN_H 1  /* for TCC compiler */
-
 #include <SDL2/SDL.h>
 
 int sdl_layer_init(const char *, int, int, int);

@@ -4,7 +4,7 @@ This is yet another Chip-8 interpreter with SuperChip instructions support.
 ## Building on Linux
 * Requirements
   * SDL2 library <https://wiki.libsdl.org/Installation#Linux.2FUnix>
-  * GCC, Clang or TCC compiler
+  * GCC or Clang
   * make
 * type `make`
 

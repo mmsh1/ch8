@@ -764,8 +764,7 @@ void
 chip8_emulatecycle(chip8 *c8)
 {
     /* fetch opcode */
-    c8->core.opcode =
-        c8->RAM[c8->core.PC] << 8 | c8->RAM[(c8->core.PC) + 1];
+    c8->core.opcode = c8->RAM[c8->core.PC] << 8 | c8->RAM[(c8->core.PC) + 1];
 
     /* increment program counter */
     c8->core.PC += 2;
