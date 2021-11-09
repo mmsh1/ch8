@@ -120,9 +120,9 @@ static uint8_t hres_sprites[100] = {
 static void
 _render_output(uint8_t *disp_mem, uint32_t *disp_output, uint8_t ext_flag)
 {
-    uint8_t x = 0, y = 0;
+	uint8_t x = 0, y = 0;
     uint16_t i;
-    uint32_t pix;
+	uint32_t pix;
     if (ext_flag) {
         for(i = 0; i < SC8_DISP_WIDTH * SC8_DISP_HEIGHT; i++) {
             disp_output[i] = 0xFFFFFFFF * ((disp_mem[i / 8] >> (7 - i % 8)) & 1);
@@ -334,13 +334,16 @@ c8_8xy4(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
-    uint16_t sum = c8->core.V[x] + c8->core.V[y];
+    uint16_t sum;
+    int carry;
     if (sum > 0xFF) {
-        c8->core.V[0xF] = 1;
+        carry = 1;
     } else {
-        c8->core.V[0xF] = 0;
+        carry = 0;
     }
+    sum = c8->core.V[x] + c8->core.V[y];
     c8->core.V[x] = sum & 0x00FF;
+    c8->core.V[0xF] = carry;
 }
 
 static void
@@ -348,12 +351,14 @@ c8_8xy5(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
-    if (c8->core.V[x] > c8->core.V[y]) {
-        c8->core.V[0xF] = 1;
+    int no_borrow;
+    if (c8->core.V[x] >= c8->core.V[y]) {
+        no_borrow = 1;
     } else {
-        c8->core.V[0xF] = 0;
+        no_borrow = 0;
     }
     c8->core.V[x] = c8->core.V[x] - c8->core.V[y];
+    c8->core.V[0xF] = no_borrow;
 }
 
 static void
@@ -369,12 +374,14 @@ c8_8xy7(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
-    if (c8->core.V[y] > c8->core.V[x]) {
-        c8->core.V[0xF] = 1;
+    int no_borrow;
+    if (c8->core.V[y] >= c8->core.V[x]) {
+        no_borrow = 1;
     } else {
-        c8->core.V[0xF] = 0;
+        no_borrow = 0;
     }
     c8->core.V[x] = c8->core.V[y] - c8->core.V[x];
+    c8->core.V[0xF] = no_borrow;
 }
 
 static void
