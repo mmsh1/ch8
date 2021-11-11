@@ -334,14 +334,15 @@ c8_8xy4(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
-    uint16_t sum;
-    int carry;
+    uint8_t carry;
+    uint16_t sum = 0;
+
+    sum = c8->core.V[x] + c8->core.V[y];
     if (sum > 0xFF) {
         carry = 1;
     } else {
         carry = 0;
     }
-    sum = c8->core.V[x] + c8->core.V[y];
     c8->core.V[x] = sum & 0x00FF;
     c8->core.V[0xF] = carry;
 }
@@ -351,7 +352,7 @@ c8_8xy5(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
-    int no_borrow;
+    uint8_t no_borrow;
     if (c8->core.V[x] >= c8->core.V[y]) {
         no_borrow = 1;
     } else {
@@ -374,7 +375,7 @@ c8_8xy7(chip8 *c8)
 {
     uint8_t x = (c8->core.opcode & 0x0F00) >> 8;
     uint8_t y = (c8->core.opcode & 0x00F0) >> 4;
-    int no_borrow;
+    uint8_t no_borrow;
     if (c8->core.V[y] >= c8->core.V[x]) {
         no_borrow = 1;
     } else {
