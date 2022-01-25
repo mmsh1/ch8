@@ -1,9 +1,15 @@
+#include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h> /* fclose, fopen, fread, fprintf */
+#include <stdio.h>  /* fclose, fopen, fread, fprintf */
 #include <string.h> /* memcpy, memset */
 
-#include "chip8.h"
 #include "sdl_layer.h"
+
+enum {
+    RAM_SIZE = 0x1000,
+    PROGRAMM_START_OFFSET = 0x200,
+    MAX_GAME_SIZE = RAM_SIZE - PROGRAMM_START_OFFSET
+};
 
 enum {
     C8_DISP_WIDTH = 64,
@@ -12,6 +18,29 @@ enum {
     SC8_DISP_WIDTH = 128,
     SC8_DISP_HEIGHT = 64
 };
+
+typedef union {
+    uint8_t RAM[RAM_SIZE];
+    struct internals {
+        uint8_t V[16];              /* V[F] reserved for carry flag */
+        uint8_t delay_timer;
+        uint8_t sound_timer;
+        uint8_t SP;                 /* stack pointer */
+        uint8_t keys[16];
+        uint8_t lres_font[16 * 5];  /* 16 sprites, 5 bytes per sprite */
+        uint8_t hres_font[10 * 10]; /* 10 sprites, 10 bytes per sprite */
+
+        uint8_t draw_flag;          /* to avoid redundant drawing */
+        uint8_t extended_flag;      /* SCHIP mode */
+        uint8_t exit_flag;
+        uint8_t rpl_flags[8];
+
+        uint16_t opcode;            /* current instruction */
+        uint16_t PC;                /* program counter */
+        uint16_t stack[16];
+        uint16_t I;
+    } core;
+} chip8;
 
 typedef void (*c8_opcode_func)(chip8 *);
 
@@ -76,6 +105,10 @@ static void init_optable_8(void);
 static void init_optable_E(void);
 static void init_optable_F(void);
 
+static void chip8_init(chip8 *);
+static void chip8_emulatecycle(chip8 *);
+static int  chip8_loadgame(chip8 *, const char *);
+
 static c8_opcode_func optable_main[0xF + 1];
 static c8_opcode_func optable_0[0xFF + 1];
 static c8_opcode_func optable_8[0x0E + 1];
@@ -85,7 +118,8 @@ static c8_opcode_func optable_F[0x85 + 1];
 uint8_t disp_mem[SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8];
 uint32_t disp_output[SC8_DISP_WIDTH * SC8_DISP_HEIGHT];
 
-static uint8_t lres_sprites[80] = {
+static uint8_t
+lres_sprites[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,   /* 0 */
     0x20, 0x60, 0x20, 0x20, 0x70,   /* 1 */
     0xF0, 0x10, 0xF0, 0x80, 0xF0,   /* 2 */
@@ -104,7 +138,8 @@ static uint8_t lres_sprites[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80    /* F */
 };
 
-static uint8_t hres_sprites[100] = {
+static uint8_t
+hres_sprites[100] = {
     0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF,   /* 0 */
     0x18, 0x78, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0xFF, 0xFF,   /* 1 */
     0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF,   /* 2 */
@@ -809,7 +844,7 @@ main(int argc, char **argv)
 
     if (argc != 2) {
         fprintf(stderr, "ERROR: wrong arguments!\n");
-        fprintf(stderr, "Usage: %s ROM\n", argv[0]);
+        fprintf(stderr, "Usage: %s <ROM>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
