@@ -21,7 +21,7 @@ enum {
 
 typedef union {
     uint8_t RAM[RAM_SIZE];
-    struct internals {
+    struct {
         uint8_t V[16];              /* V[F] reserved for carry flag */
         uint8_t delay_timer;
         uint8_t sound_timer;
