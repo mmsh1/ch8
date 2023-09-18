@@ -886,7 +886,7 @@ main(int argc, char **argv)
                            SC8_DISP_WIDTH);
             c8->core.draw_flag = 0;
         }
-        SDL_Delay(1);
+        sdl_delay(1);
     }
     sdl_layer_destroy();
     free(c8);

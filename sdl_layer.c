@@ -1,5 +1,7 @@
 #include "sdl_layer.h"
 
+#include <SDL2/SDL.h>
+
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
@@ -10,45 +12,51 @@ create_argb(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     return (b << 24) | (g << 16) | (r << 8) | a;
 }
 
+void
+sdl_delay(uint32_t ms)
+{
+	SDL_Delay(ms);
+}
+
 int
 sdl_layer_init(const char *wname, int width, int height, int scale)
 {
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) != 0) {
-        fprintf(stderr, "Error: SDL_Init failed. %s\n", SDL_GetError());
-        return -1;
+        fprintf(stderr, "Error: SDL_Init: %s\n", SDL_GetError());
+        goto error;
     }
-    window = SDL_CreateWindow(wname,
-                              SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED,
-                              width * scale,
-                              height * scale,
-                              SDL_WINDOW_SHOWN);
 
+    window = SDL_CreateWindow(wname, SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED, width * scale,
+                              height * scale, SDL_WINDOW_SHOWN);
     if (!window) {
-        fprintf(stderr, "Error: window creation failed. %s\n", SDL_GetError());
-        SDL_Quit();
-        return -1;
+        fprintf(stderr, "Error: window creation: %s\n", SDL_GetError());
+		goto window_error;
     }
+
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
-        fprintf(stderr, "Error: renderer creation failed. %s\n", SDL_GetError());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
+        fprintf(stderr, "Error: renderer creation: %s\n", SDL_GetError());
+        goto renderer_error;
     }
-    texture = SDL_CreateTexture(renderer,
-                                SDL_PIXELFORMAT_ARGB32,
-                                SDL_TEXTUREACCESS_STREAMING,
-                                width,
-                                height);
+
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB32,
+                                SDL_TEXTUREACCESS_STREAMING, width, height);
     if (!texture) {
-        fprintf(stderr, "Error: texture creation failed. %s\n", SDL_GetError());
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
+        fprintf(stderr, "Error: texture creation: %s\n", SDL_GetError());
+    	goto texture_error;
     }
+
     return 0;
+
+texture_error:
+	SDL_DestroyRenderer(renderer);
+renderer_error:
+	SDL_DestroyWindow(window);
+window_error:
+	SDL_Quit();
+error:
+	return -1;
 }
 
 void
