@@ -99,6 +99,7 @@ static void c8_goto_optable_8(chip8 *);
 static void c8_goto_optable_E(chip8 *);
 static void c8_goto_optable_F(chip8 *);
 
+static void init_optables(void);
 static void init_optable_main(void);
 static void init_optable_0(void);
 static void init_optable_8(void);
@@ -721,6 +722,16 @@ init_optable_main()
 }
 
 static void
+init_optables()
+{
+    init_optable_main();
+    init_optable_0();
+    init_optable_8();
+    init_optable_E();
+    init_optable_F();
+}
+
+static void
 init_optable_0()
 {
     uint16_t i;
@@ -840,7 +851,7 @@ chip8_loadgame(chip8 *c8, const char *game_name)
 int
 main(int argc, char **argv)
 {
-    chip8 *c8 = NULL;
+    chip8 c8;
 
     if (argc != 2) {
         fprintf(stderr, "ERROR: wrong arguments!\n");
@@ -848,47 +859,35 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    init_optable_main();
-    init_optable_0();
-    init_optable_8();
-    init_optable_E();
-    init_optable_F();
+    init_optables();
 
     memset(disp_mem, 0, sizeof(disp_mem[0]) * (SC8_DISP_WIDTH * SC8_DISP_HEIGHT / 8));
     memset(disp_output, 0, sizeof(disp_output[0]) * SC8_DISP_WIDTH * SC8_DISP_HEIGHT);
 
-    c8 = malloc(sizeof(*c8));
-    if (c8 == NULL) {
-        fprintf(stderr, "ERROR: memory allocation failed!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    chip8_init(c8);
-    if (chip8_loadgame(c8, argv[1]) == -1) {
+    chip8_init(&c8);
+    if (chip8_loadgame(&c8, argv[1]) == -1) {
         fprintf(stderr, "ERROR: game not loaded!\n");
-        free(c8);
         exit(EXIT_FAILURE);
     }
 
     if (sdl_layer_init(argv[1], SC8_DISP_WIDTH, SC8_DISP_HEIGHT, 4) == -1) {
         fprintf(stderr, "ERROR: sdl_layer creation failed!\n");
-        free(c8);
         exit(EXIT_FAILURE);
     }
 
-    while (!c8->core.exit_flag) {
-        sdl_handle_keystroke(c8->core.keys, &(c8->core.exit_flag));
-        chip8_emulatecycle(c8);
-        if (c8->core.draw_flag) {
-            _render_output(disp_mem, disp_output, c8->core.extended_flag);
+    while (!c8.core.exit_flag) {
+        sdl_handle_keystroke(c8.core.keys, &(c8.core.exit_flag));
+        chip8_emulatecycle(&c8);
+        if (c8.core.draw_flag) {
+            _render_output(disp_mem, disp_output, c8.core.extended_flag);
             sdl_layer_draw(disp_output,
                            SC8_DISP_WIDTH * SC8_DISP_HEIGHT,
                            SC8_DISP_WIDTH);
-            c8->core.draw_flag = 0;
+            c8.core.draw_flag = 0;
         }
         sdl_delay(1);
     }
+
     sdl_layer_destroy();
-    free(c8);
     return EXIT_SUCCESS;
 }
